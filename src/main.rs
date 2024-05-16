@@ -1,7 +1,9 @@
 pub mod memory;
 pub mod instructions;
+#[cfg(test)]
+mod tests;
 use memory::*;
+
 fn main() {
-    let hola: Word = Word {val:0b0000000000000001};
-    print!("hola, {}", hola.read());
+    print!("hola, {}", CR.acc.as_i16());
 }

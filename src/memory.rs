@@ -1,22 +1,65 @@
+use core::sync::atomic::AtomicU16;
+use core::sync::atomic::Ordering;
+
+pub static CR: CentralRegisters = CentralRegisters::new();
+// Provisional
+pub static EM: [Memloc; 16] = initialize_memory();
+// We will use the convention that a word means 'we only use 15 bits'. Bit 16 should always be zero
+// This convention doesn't hold for operations that may use the value of the acc, which is 16 bits long,
+// such as read or write memory operations. Any other function that takes a Word as a parameter operates
+// with the convention in mind.
+pub type Word = u16; 
+// provisional
+pub type Address = u16;
+
 pub struct CentralRegisters {
-    pub acc: Word,
+    pub acc: Memloc,
+}
+impl CentralRegisters {
+    const fn new() -> Self {
+        Self {acc: Memloc::new(0b0111111111111110)}
+    }
 }
 
-pub struct Word {
-    pub val: u16 // In reality just 15 bits are used
+// Wrapper for managing atomic values
+pub struct Memloc {
+    pub val: AtomicU16 // In reality just 15 bits are used
 }
 
-pub struct DoubleWord {
-    pub val: u32 // In reality just 30 bits are used
-}
+impl Memloc {
+    pub const fn new(n: u16) -> Self {
+        Self {val: AtomicU16::new(n)}
+    }
 
-impl Word {
-    pub fn as_i16(self) -> i16 {
-        let v = ((self.val << 1) as i16) / 2;
-        if v < 0 {return v - 1;}
+    pub fn as_i16(&self) -> i16 {
+        let v = ((self.val.load(Ordering::Relaxed) << 1) as i16) / 2; // Ignores the 16th bit
+        if v < 0 {return v + 1;} // Because the value is in one's complement
         else {return v;}
     }
-    pub fn as_u16(self) -> u16 {
-        return self.val;
+
+    pub fn load(&self) -> Word {
+        return self.val.load(Ordering::Relaxed);
     }
+
+    pub fn write(&self, val: Word) {
+        self.val.store(val, Ordering::Relaxed);
+    }
+}
+
+pub fn is_16bit(k: Address) -> bool {
+    match k {
+        0 | 2 => true, // Registers A and Q
+        _ => false
+    }
+}
+
+// Provisional
+const fn initialize_memory() -> [Memloc; 16] {
+    let mem: [Memloc; 16] = [
+        Memloc::new(0), Memloc::new(0), Memloc::new(0), Memloc::new(0), 
+        Memloc::new(0), Memloc::new(0), Memloc::new(0), Memloc::new(0), 
+        Memloc::new(0), Memloc::new(0), Memloc::new(0), Memloc::new(0), 
+        Memloc::new(0), Memloc::new(0), Memloc::new(0), Memloc::new(0),
+    ];
+    mem
 }
