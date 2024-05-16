@@ -18,7 +18,7 @@ pub fn add_modified(a: u16, b: u16) -> u16 {
     let mut sum: u32 = (a + b) as u32; 
 
     // impl of one's complement 'end-around carry'
-    sum += sum >> 15;
+    sum += (sum >> 15) % 2;
 
     // impl of s2 bit (it adds a and b's sign bit to bit 16)
     sum += ((a & 0b0100000000000000) << 1) as u32;
@@ -45,7 +45,7 @@ pub fn ads(k: Address) {
     write_to(k, sum);
 }
 
-pub fn aug (k: Address) {
+pub fn aug(k: ErasableAddress) {
     let n = load_from(k);
     if is_16bit(k) {
         if n >> 15 == 0 {write_to(k, add_modified(n, 1))} // +1
@@ -55,4 +55,19 @@ pub fn aug (k: Address) {
         if (n >> 15) % 2 == 0 {write_to(k, add_modified(n, 1))} // +1
         else {write_to(k, add_modified(k, 0b0111111111111111))} // -1
     }
+}
+
+pub fn bzf(k: FixedAddress) {
+    let acc = CentralRegisters.acc.load();
+    if acc == 0 || acc == 0xFFFF {CentralRegisters.z.write(k)} // acc +0 or -0
+    // Clear extracode flag
+}
+
+pub fn bzmf(k: FixedAddress) {
+    let acc = CentralRegisters.acc.load();
+    if acc == 0 || (acc >> 15) % 2 {CentralRegisters.z.write(k)}
+}
+
+pub fn ca(k: Address) {
+    
 }

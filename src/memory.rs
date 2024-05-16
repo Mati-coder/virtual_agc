@@ -11,13 +11,16 @@ pub static EM: [Memloc; 16] = initialize_memory();
 pub type Word = u16; 
 // provisional
 pub type Address = u16;
+pub type FixedAddress = u16;
+pub type ErasableAddress = u16;
 
 pub struct CentralRegisters {
     pub acc: Memloc,
+    pub z: Memloc,
 }
 impl CentralRegisters {
     const fn new() -> Self {
-        Self {acc: Memloc::new(0b0111111111111110)}
+        Self {acc: Memloc::new(0), z: Memloc::new(0)}
     }
 }
 
