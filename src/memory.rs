@@ -16,11 +16,12 @@ pub type ErasableAddress = u16;
 
 pub struct CentralRegisters {
     pub acc: Memloc,
+    pub l: Memloc,
     pub z: Memloc,
 }
 impl CentralRegisters {
     const fn new() -> Self {
-        Self {acc: Memloc::new(0), z: Memloc::new(0)}
+        Self {acc: Memloc::new(0), l: Memloc::new(0), z: Memloc::new(0)}
     }
 }
 

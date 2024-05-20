@@ -27,15 +27,15 @@ pub fn add_modified(a: u16, b: u16) -> u16 {
     sum as u16
 }
 
-// The accumulator uses the 16th bit of the word (not used anywhere else) to store the s2 bit
-// No check for previous overflow is performed
+// Add
 pub fn ad(k: Address) {
     let a: u16 = CR.acc.load();
     let b: u16 = load_from(k);
     CR.acc.write(add_modified(a, b));
 }
 
-pub fn ads(k: Address) {
+// Add to storage
+pub fn ads(k: ErasableAddress) {
     let a: u16 = CR.acc.load();
     let b: u16 = load_from(k);
     let sum = add_modified(a, b);
@@ -45,6 +45,7 @@ pub fn ads(k: Address) {
     write_to(k, sum);
 }
 
+// Augment
 pub fn aug(k: ErasableAddress) {
     let n = load_from(k);
     if is_16bit(k) {
@@ -57,17 +58,43 @@ pub fn aug(k: ErasableAddress) {
     }
 }
 
+// Branch zero to fixed
 pub fn bzf(k: FixedAddress) {
-    let acc = CentralRegisters.acc.load();
-    if acc == 0 || acc == 0xFFFF {CentralRegisters.z.write(k)} // acc +0 or -0
+    let acc = CR.acc.load();
+    if acc == 0 || acc == 0xFFFF {CR.z.write(k)} // acc +0 or -0
     // Clear extracode flag
 }
 
+// Branch zero or minus to fixed
 pub fn bzmf(k: FixedAddress) {
-    let acc = CentralRegisters.acc.load();
-    if acc == 0 || (acc >> 15) % 2 {CentralRegisters.z.write(k)}
+    let acc = CR.acc.load();
+    if acc == 0 || ( (acc >> 15) % 2 ) != 0 {CR.z.write(k)}
 }
 
+// Clear and Add
 pub fn ca(k: Address) {
-    
+    let n = load_from(k);
+    CR.acc.write(n);
 }
+
+// Clear and Substract
+pub fn cs(k: Address) {
+    if is_16bit(k) {
+        CR.acc.write(!load_from(k));
+    } else {
+        let n = load_from(k);
+        if (n >> 15) % 2 == 0 {CR.acc.write(!n | 0x8000)} // !n is negative, bit 16 set to 1
+        else {CR.acc.write(!n & 0x7FFF)} // !n is positive, bit 16 set to 0
+    }
+}
+
+// Double Add to Storage
+pub fn das(k: ErasableAddress) {
+    let a1 = CR.acc.load();
+    let a2 = CR.l.load();
+    let b1 = load_from(k);
+    let b2 = load_from(k + 1);
+
+    let sum2 = add_modified(a2, b2);
+    
+} 
