@@ -1,6 +1,8 @@
 use core::sync::atomic::AtomicU16;
 use core::sync::atomic::Ordering;
 
+pub const NEG_ONE: u16 = 0b1111111111111110; // Negative one represented in one's complement, bit s2 set
+pub const NEG_ZERO: u16 = 0xFFFF; // Negative zero in one's complement
 pub static CR: CentralRegisters = CentralRegisters::new();
 // Provisional
 pub static EM: [Memloc; 16] = initialize_memory();
@@ -33,12 +35,6 @@ pub struct Memloc {
 impl Memloc {
     pub const fn new(n: u16) -> Self {
         Self {val: AtomicU16::new(n)}
-    }
-
-    pub fn as_i16(&self) -> i16 {
-        let v = ((self.val.load(Ordering::Relaxed) << 1) as i16) / 2; // Ignores the 16th bit
-        if v < 0 {return v + 1;} // Because the value is in one's complement
-        else {return v;}
     }
 
     pub fn load(&self) -> Word {
