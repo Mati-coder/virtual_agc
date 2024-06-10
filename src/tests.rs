@@ -1,4 +1,5 @@
 use crate::instructions::*;
+use crate::memory::*;
 
 #[test]
 fn test_add_positive() { 
@@ -75,4 +76,19 @@ fn test_ones_complement() {
     
     assert_eq!(ones_complement32(n1), 5);
     assert_eq!(ones_complement32(n2), 0xFFFFFFF6)
+}
+
+#[test]
+fn test_memory() {
+    let a = 0x7FFF;
+    MEMORY.write(ACC, a);
+    assert_eq!(MEMORY.read(ACC), a);
+    MEMORY.write_acc_signed(a);
+    assert_eq!(MEMORY.read(ACC), a + 0x8000);
+
+    MEMORY.write(90, 0xFFFF);
+    assert_eq!(MEMORY.read(90), 0x7FFF);
+
+    MEMORY.fixed.write(2068, 0xF001);
+    assert_eq!(MEMORY.read(2068), 0x7001);
 }
