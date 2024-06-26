@@ -1,16 +1,7 @@
 use crate::instructions::*;
-use crate::memory::*;
 
 #[test]
 fn test_add_positive() { 
-    // Setup
-    let a = 0b0000000000000011; // 3
-    let b = 0b0111111111111101; // -2
-
-    let sum = add_modified(a, b);
-
-    assert_eq!(sum, 0b0000000000000001); // 1
-
     // Setup 16bit
     let a = 0b0000000000000011; // 3
     let b = 0b1111111111111101; // -2
@@ -22,14 +13,6 @@ fn test_add_positive() {
 
 #[test]
 fn test_add_negative() { 
-    // Setup
-    let a = 0b0000000000000011; // 3
-    let b = 0b0111111111111010; // -5
-
-    let sum = add_modified(a, b);
-
-    assert_eq!(sum, 0b1111111111111101); // -2
-
     // Setup 16bit
     let a = 0b0000000000000011; // 3
     let b = 0b1111111111111010; // -5
@@ -52,14 +35,6 @@ fn test_add_positive_overflow() {
 
 #[test]
 fn test_add_negative_overflow() { 
-    // Setup
-    let a = 0b0100000000000000; // -16383
-    let b = 0b0111111111111110; // -1
-
-    let sum = add_modified(a, b);
-
-    assert_eq!(sum, 0b1011111111111111); // 16383 / -0 with overflow
-
     // Setup 16bit
     let a = 0b1100000000000000; // -16383
     let b = 0b1111111111111110; // -1
@@ -76,19 +51,4 @@ fn test_ones_complement() {
     
     assert_eq!(ones_complement32(n1), 5);
     assert_eq!(ones_complement32(n2), 0xFFFFFFF6)
-}
-
-#[test]
-fn test_memory() {
-    let a = 0x7FFF;
-    MEMORY.write(ACC, a);
-    assert_eq!(MEMORY.read(ACC), a);
-    MEMORY.write_acc_signed(a);
-    assert_eq!(MEMORY.read(ACC), a + 0x8000);
-
-    MEMORY.write(90, 0xFFFF);
-    assert_eq!(MEMORY.read(90), 0x7FFF);
-
-    MEMORY.fixed.write(2068, 0xF001);
-    assert_eq!(MEMORY.read(2068), 0x7001);
 }

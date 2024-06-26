@@ -1,0 +1,26 @@
+ENTRY: 
+    CS THRESHOLD
+    AD N1
+    AD N2
+    EXTEND
+    BZMF NOT
+    CA ZERO
+    INCR ACC
+    TCF EXIT
+NOT:
+    CA ZERO
+    TCF EXIT
+
+N1:
+    DEC 29
+N2:
+    DEC 20
+THRESHOLD:
+    DEC 40
+
+EXIT:
+    
+DONOTHING:
+    TCF DONOTHING
+
+ 
