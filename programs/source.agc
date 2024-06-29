@@ -12,11 +12,11 @@ NOT:
     TCF EXIT
 
 N1:
-    DEC 29
+    DEC 30
 N2:
-    DEC 20
+    DEC -55
 THRESHOLD:
-    DEC 40
+    DEC -10
 
 EXIT:
     
