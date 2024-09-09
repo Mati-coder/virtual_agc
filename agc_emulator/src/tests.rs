@@ -46,9 +46,32 @@ fn test_add_negative_overflow() {
 
 #[test]
 fn test_ones_complement() {
-    let n1 = 5;
-    let n2 = -9;
+    let n1 = 32767;
+    let n2 = -32767;
     
-    assert_eq!(ones_complement32(n1), 5);
-    assert_eq!(ones_complement32(n2), 0xFFFFFFF6)
+    assert_eq!(ones_complement32(n1), 32767);
+    assert_eq!(ones_complement32(n2), 0xFFFF8000);
+    assert_eq!(ones_complement16(n1 as i16), 32767);
+    assert_eq!(ones_complement16(n2 as i16), 0x8000);
+}
+
+#[test]
+fn test_i32_conversion() {
+    let n1 = 0;
+    let n2 = 0xFFFF; // NEG ZERO
+    let n3 = 8;
+    let n4 = 0xFFF7;
+
+    let n5 = 0x8001;
+    let n6 = 1;
+
+    let n7 = 0xFFFE;
+    let n8 = 0x7FFE;
+
+    assert_eq!(as_i32(n1), 0);
+    assert_eq!(as_i32(n2), 0);
+    assert_eq!(as_i32(n3), 8);
+    assert_eq!(as_i32(n4), -8);
+    assert_eq!(as_i32(n5), as_i32(n6));
+    assert_eq!(as_i32(n7), as_i32(n8));
 }

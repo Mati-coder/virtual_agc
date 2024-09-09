@@ -1,0 +1,21 @@
+.threshold
+ENTRY:
+    CS THRESHOLD
+    AD N1
+    AD N2
+    EXTEND
+    BZMF NOT
+    CA ZERO
+    INCR ACC
+    TCF DONOTHING
+NOT:
+    CA ZERO
+    TCF DONOTHING
+
+.data
+N1:
+    DEC 30
+N2:
+    DEC -55
+THRESHOLD:
+    DEC -10

@@ -1,4 +1,6 @@
-use crate::Memory::*;
+use crate::memory::*;
+
+pub struct Instruction(pub &'static str, pub Address);
 
 // Pure instructions
 pub const AD: u16 =     0b110000000000000;
@@ -46,26 +48,10 @@ pub const SQUARE: u16 = 0b011100000000000;
 pub const ZL: u16 =     0b001001000000111;
 pub const ZQ: u16 =     0b001001000000111;
 
-// How the AGC's ALU added
-// It represents numbers in 15 bit one's complement and adds a modification to the sign bit
-// For non-overflow conditions this function returns a value who's bit 15 and 16 are equal
-pub fn add_modified(a: u16, b: u16) -> u16 {
-    // u32 is used because sometimes we overflow the 16th bit
-    // we set bit 16 to zero, it was the only way I found to detect overflows of the 15th bit, needed
-    // to implement the 'end-around carry'.
-    let mut sum: u32 = ((a & 0x7FFF) + (b & 0x7FFF)) as u32; 
-    // impl of one's complement 'end-around carry'
-    sum += (sum >> 15) % 2;
-
-    // addition of bit 16
-    sum += (a & 0x8000) as u32;
-    sum += (b & 0x8000) as u32;
-
-    sum as u16
-}
+// UTILITY FUNCTIONS
 
 // Corrects the overflow of a value (flips bit 15) if it has one, else returns the value
-pub fn correct(n: u16) -> u16 {
+pub(crate) fn correct(n: u16) -> u16 {
     let sign_bits = n >> 15; // bits 16 and 15
     match sign_bits {
         0b00 | 0b11 => return n,
@@ -76,7 +62,7 @@ pub fn correct(n: u16) -> u16 {
 }
 
 // Copy bit 15 into bit 16, return new value
-pub fn sign_extend(n: u16) -> u16 {
+pub(crate) fn sign_extend(n: u16) -> u16 {
     if n & 0x4000 == 0 {
         n & 0x7FFF
     } else {
@@ -84,7 +70,7 @@ pub fn sign_extend(n: u16) -> u16 {
     }
 }
 
-pub fn read_16(k: Address) -> u16 {
+pub(crate) fn read_16(k: Address) -> u16 {
     if is_16bit(k) {
         return MEMORY.read(k);
     }
@@ -92,27 +78,61 @@ pub fn read_16(k: Address) -> u16 {
     return sign_extend(MEMORY.read(k));
 }
 
-pub fn execute(mut ins: Instruction) {
-    ins += MEMORY.index.read();
+pub(crate)fn as_i32(n: Word) -> i32 {
+    let mut v = ((n << 1) as i32) >> 1; // Ignores the 16th bit
+    // Copy bit 15 into bit 32
+    if (v & 0x4000) == 0 {
+        v &= 0x7FFFFFFF;
+    } else {
+        v |= (0x80000000 as u32) as i32;
+    }
+    if v < 0 {return (v | 0x7FFF8000) + 1;} // Because v is in one's complement and only the first 15 bits are used
+    else {return v}
+}
+
+pub(crate) fn ones_complement32(n: i32) -> u32 {
+    if n < 0 { return !(n.abs()) as u32}
+    return n as u32
+}
+
+pub(crate) fn ones_complement16(n: i16) -> u16 {
+        if n < 0 { return !(n.abs()) as u16}
+        return n as u16
+}
+
+pub(crate) fn bit15(n: Word) -> u16 {
+    (n >> 14) % 2
+}
+
+pub(crate) fn bit16(n: Word) -> u16 {
+    (n >> 14) % 2
+}
+
+
+// EXTEND AND INDEX HAVE PROBLEMS
+pub fn execute(ins: Word) -> Instruction{
+    let ins = ins + MEMORY.get_index();
 
     let opcode = (ins & 0x7000) >> 12; // bits 15-13
     let qc = (ins & 0x0C00) >> 10; // bits 12-11
     let er_address: ErasableAddress = ins & 0x03FF; // first 10 bits
     let address: Address = ins & 0x0FFF; // first 12 bits
     let extracode: bool = MEMORY.extracode();
+    let index = MEMORY.get_index();
 
     MEMORY.write(Z, MEMORY.read(Z) + 1); // Increment program counter
     MEMORY.clear_index();
     MEMORY.clear_extracode();
 
     // Instruction decoding according to AGC's documentation
-    if !extracode { // Basic instructions
+    if !extracode { 
+        // Basic instructions
         match opcode {
             0 => match address {
-                2 => MEMORY.write(Z, Q), // RETURN
-                3 => MEMORY.relint(), // RELINT
-                4 => MEMORY.inhint(), // INHINT
-                6 => MEMORY.set_extracode(), // EXTEND
+                2 => {MEMORY.write(Z, Q); Instruction("RETURN", 0)}, // RETURN
+                3 => {MEMORY.relint(); Instruction("RELINT", 0)}, // RELINT
+                4 => {MEMORY.inhint(); Instruction("INHINT", 0)}, // INHINT
+                6 => {MEMORY.set_extracode(); Instruction("EXTEND", 0)}, // EXTEND
                 _ => tc(address)
             }
             1 => match qc {
@@ -133,7 +153,8 @@ pub fn execute(mut ins: Instruction) {
                 0 => if address == 15 {
                     unimplemented!() // should be RESUME
                 } else {
-                    MEMORY.set_index(MEMORY.read(address)); // INDEX
+                    MEMORY.set_index(index + MEMORY.read(address)); // INDEX
+                    Instruction("INDEX", address)
                 }
                 1 => dxch(er_address),
                 2 => ts(er_address),
@@ -144,7 +165,8 @@ pub fn execute(mut ins: Instruction) {
             7 => mask(address),
             _ => unreachable!(),
         }
-    } else { // Extended instructions
+    } else { 
+        // Extended instructions
         match opcode {
             1 => match qc {
                 0 => unimplemented!(), // DV instruction, not implemented
@@ -163,6 +185,7 @@ pub fn execute(mut ins: Instruction) {
             5 => {
                 MEMORY.set_index(MEMORY.read(address)); // INDEX
                 MEMORY.set_extracode(); // Keep extracode flag
+                Instruction("INDEX", address)
                 } 
             6 => match qc {
                 0 => su(er_address),
@@ -175,34 +198,27 @@ pub fn execute(mut ins: Instruction) {
     }
 }
 
-pub fn as_i32(n: u16) -> i32 {
-    let mut v = ((n << 1) as i32) >> 1; // Ignores the 16th bit
-    // Copy bit 15 into bit 32
-    if (v & 0x4000) == 0 {
-        v &= 0x7FFFFFFF;
-    } else {
-        v |= (0x80000000 as u32) as i32;
-    }
-    if v < 0 {return (v | 0x7FFF8000) + 1;} // Because v is in one's complement
-    else {return v;}
-}
+// How the AGC's ALU added
+// It represents numbers in 15 bit one's complement and adds a modification to the sign bit
+// For non-overflow conditions this function returns a value who's bit 15 and 16 are equal
+pub(crate) fn add_modified(a: u16, b: u16) -> u16 {
+    // u32 is used because sometimes we overflow the 16th bit
+    // we set bit 16 to zero, it was the only way I found to detect overflows of the 15th bit, needed
+    // to implement the 'end-around carry'.
+    let mut sum: u32 = ((a & 0x7FFF) + (b & 0x7FFF)) as u32; 
+    // impl of one's complement 'end-around carry'
+    sum += (sum >> 15) % 2;
 
-pub fn ones_complement32(n: i32) -> u32 {
-    if n < 0 { return !(n.abs()) as u32}
-    return n as u32
-}
-pub fn ones_complement16(n: i16) -> u16 {
-        if n < 0 { return !(n.abs()) as u16}
-        return n as u16
-}
+    // addition of bit 16
+    sum += (a & 0x8000) as u32;
+    sum += (b & 0x8000) as u32;
 
-pub fn sign_bit(n: u16) -> Word {
-    return (n >> 14) % 2 // returns bit 15
+    sum as u16
 }
 
 // Saves a value overflow-corrected, except when saving to A or Q
 // Returns +0 for no overflow, +1 for +overflow and -1(one's complement) for -overflow
-pub fn save_corrected(n: u16, k: ErasableAddress) -> Word {
+pub(crate) fn save_corrected_return_overflow(n: u16, k: ErasableAddress) -> Word {
     let sign_bits = n >> 14; // bits 16 and 15
     match sign_bits {
         0b00 | 0b11 => {
@@ -232,73 +248,77 @@ pub fn save_corrected(n: u16, k: ErasableAddress) -> Word {
 }
 
 // Add
-pub fn ad(k: Address) {
+pub(crate) fn ad(k: Address) -> Instruction {
     let a: u16 = MEMORY.read(ACC);
     let b: u16 = read_16(k);
     
     MEMORY.write(ACC, add_modified(a, b));
+    
+    Instruction("AD", k)
 }
 
 // Add to storage
-pub fn ads(k: ErasableAddress) {
+pub(crate) fn ads(k: ErasableAddress) -> Instruction{
     let a: u16 = MEMORY.read(ACC);
     let b: u16 = read_16(k);
     let sum = add_modified(a, b);
     MEMORY.write(ACC, sum);
+    save_corrected_return_overflow(sum, k);
 
-    // This is wrong, the sum should be saved overflow-corrected
-    MEMORY.write(k, sum);
+    Instruction("ADS", k)
 }
 
 // Augment
-pub fn aug(k: ErasableAddress) {
-    let n = MEMORY.read(k);
-    if is_16bit(k) {
-        if n >> 15 == 0 {MEMORY.write(k, add_modified(n, 1))} // +1
-        else {MEMORY.write(k, add_modified(n, NEG_ONE))} // -1
+pub(crate) fn aug(k: ErasableAddress) -> Instruction {
+    let n = read_16(k);
+    if bit16(n) == 0 {
+        MEMORY.write(k, add_modified(n, 1));
+    } else {
+        MEMORY.write(k, add_modified(n, NEG_ONE));
     }
-    else {
-        if (n >> 14) % 2 == 0 {MEMORY.write(k, add_modified(n, 1))} // +1
-        else {MEMORY.write(k, add_modified(n, NEG_ONE))} // -1
-    }
+
+    Instruction("AUG", k)
 }
 
 // Branch zero to fixed
-pub fn bzf(k: FixedAddress) {
+pub(crate) fn bzf(k: FixedAddress) -> Instruction{
     let acc = MEMORY.read(ACC);
-    if acc == 0 || acc == NEG_ZERO {MEMORY.write(Z, k)} // acc +0 or -0
+    if acc == 0 || acc == NEG_ZERO {
+        MEMORY.write(Z, k);
+    }
+
+    Instruction("BZF", k)
 }
 
 // Branch zero or minus to fixed
-pub fn bzmf(k: FixedAddress) {
+pub(crate) fn bzmf(k: FixedAddress) -> Instruction{
     let acc = MEMORY.read(ACC);
-    if acc == 0 || sign_bit(acc) == 1 {MEMORY.write(Z, k)}
+    if acc == 0 || bit16(acc) == 1 {
+        MEMORY.write(Z, k);
+    }
+
+    Instruction("BZMF", k)
 }
 
 // Clear and Add
-pub fn ca(k: Address) {
-    let n = MEMORY.read(k);
-    if is_16bit(k){
-        MEMORY.write(ACC, n)
-    } else {
-        MEMORY.write(ACC, sign_extend(n));
-    }
+pub(crate) fn ca(k: Address) -> Instruction{
+    let n = read_16(k);
+    MEMORY.write(ACC, n);
+
+    Instruction("CA", k)
 }
 
 // Clear and Substract
-pub fn cs(k: Address) {
-    let n = MEMORY.read(k);
-    if is_16bit(k) {
-        MEMORY.write(ACC, !n);
-    } else {
-        MEMORY.write(ACC, sign_extend(!n));
-    }
+pub(crate) fn cs(k: Address) -> Instruction{
+    let n = read_16(k);
+    MEMORY.write(ACC, !n);
+
+    Instruction("CS", k)
 }
 
 // Cound, Compare and Skip
-pub fn ccs(k: ErasableAddress) {
+pub(crate) fn ccs(k: ErasableAddress) -> Instruction{
     let n = MEMORY.read(k);
-
 
     if is_16bit(k) {
         // Value is interpreted as 16bits
@@ -341,97 +361,100 @@ pub fn ccs(k: ErasableAddress) {
     {
         MEMORY.write(Z, MEMORY.read(Z) + 3); // Jump 4 places
     }
-    // Normal execution happens when n > 0 or n has positive overflow
+    // Normal execution (1 jump) happens when n > 0 or n has positive overflow
+
+    Instruction("CCS", k)
 }
 
 // Double Add to Storage
-pub fn das(k: ErasableAddress) {
+pub(crate) fn das(k: ErasableAddress) -> Instruction {
     let a = MEMORY.read(ACC);
-    let a_low = MEMORY.read(L);
-    let b = MEMORY.read(k - 1);
-    let b_low = MEMORY.read(k);
+    let a_low = read_16(L);
+    let b = read_16(k - 1);
+    let b_low = read_16(k);
 
     // Add and save lower word, save overflow
     let sum_low = add_modified(a_low, b_low);
-    let overflow_low = save_corrected(sum_low, k);
+    let overflow_low: u16 = save_corrected_return_overflow(sum_low, k);
 
     // Add higher words and previous overflow, save sum
     let mut sum = add_modified(a, b); 
     sum = add_modified(sum, overflow_low);
-    let overflow = save_corrected(sum, k - 1);
+    let overflow = save_corrected_return_overflow(sum, k - 1);
 
     // As defined in documentation
     MEMORY.write(ACC, overflow);
     MEMORY.write(L, 0);
+
+    Instruction("DAS", k)
 } 
 
 // Double Clear and Add
-pub fn dca(k: Address) {
+pub(crate) fn dca(k: Address) -> Instruction{
     // The AGC processed the instruction in the following order
     let low = MEMORY.read(k);
     MEMORY.write(L, low);
-    let high = MEMORY.read(k - 1);
-    if is_16bit(k - 1) {
-        MEMORY.write(ACC, high);
-    } else {
-        MEMORY.write(ACC, sign_extend(high));
-    }
+    let high = read_16(k - 1);
+    MEMORY.write(ACC, high);
+
+    Instruction("DCA", k)
 }
 
 // Double Clear and Substract
-pub fn dcs(k: Address) {
+pub(crate) fn dcs(k: Address) -> Instruction{
     // The AGC processed the instruction in the following order
     let low = MEMORY.read(k);
     MEMORY.write(L, !low);
-    let high = MEMORY.read(k - 1);
-    if is_16bit(k - 1) {
-        MEMORY.write(ACC, !high);
-    } else {
-        MEMORY.write(ACC, sign_extend(!high));
-    }
+    let high = read_16(k - 1);
+    MEMORY.write(ACC, !high);
+
+    Instruction("DCS", k)
 }
 
 // Diminish
-pub fn dim(k: ErasableAddress) {
-    let n = MEMORY.read(k);
-    if is_16bit(k) {
-        if n >> 15 == 0 {MEMORY.write(k, add_modified(n, NEG_ONE))} // +1
-        else {MEMORY.write(k, add_modified(n, 1))} // -1
+pub(crate) fn dim(k: ErasableAddress) -> Instruction{
+    let n = read_16(k);
+    if bit16(n) == 0 {
+        MEMORY.write(k, add_modified(n, NEG_ONE));
+    } else {
+        MEMORY.write(k, add_modified(n, 1));
     }
-    else {
-        if (n >> 14) % 2 == 0 {MEMORY.write(k, add_modified(n, NEG_ONE))} // +1
-        else {MEMORY.write(k, add_modified(n, 1))} // -1
-    }
+
+    Instruction("DIM", k)
 }
 
+// WORK TO DO HERE
 // Double Exchange
-pub fn dxch(k: ErasableAddress) {
-    let high = MEMORY.read(k - 1);
-    let low = MEMORY.read(k);
+pub(crate) fn dxch(k: ErasableAddress) -> Instruction {
+    let high = read_16(k - 1);
+    let low = read_16(k);
 
-    if is_16bit(k) {
-        MEMORY.write(ACC, high);
-    } else {
-        MEMORY.write(ACC, sign_extend(high));
-    }
+    MEMORY.write(ACC, high);
     MEMORY.write(L, low);
+
+    Instruction("DXCH", k)
 }
 
 // Increment
-pub fn incr(k: ErasableAddress) {
-    let n = MEMORY.read(k);
+pub(crate) fn incr(k: ErasableAddress) -> Instruction {
+    let n = read_16(k);
     MEMORY.write(k, add_modified(n, 1));
+
+    Instruction("INCR", k)
 }
 
+// WORK TO DO HERE
 // Exchange L and K
-pub fn lxch(k: ErasableAddress) {
+pub(crate) fn lxch(k: ErasableAddress) -> Instruction {
     let n = MEMORY.read(k);
     MEMORY.write(k, MEMORY.read(L));
     MEMORY.write(L, n);
+
+    Instruction("LXCH", k)
 }
 
 // AND A and k
-pub fn mask(k: Address) {
+pub(crate) fn mask(k: Address) -> Instruction {
     let mut acc = MEMORY.read(ACC);
     if is_16bit(k) {
         MEMORY.write(ACC, acc & MEMORY.read(k));
@@ -441,43 +464,47 @@ pub fn mask(k: Address) {
         acc += (acc & 0b0100000000000000) << 1; // copy bit 15 into bit 16
         MEMORY.write(ACC, acc);
     }
+
+    Instruction("MASK", k)
 }
 
 // Multiply
-pub fn mp(k: Address) {
+pub(crate) fn mp(k: Address) -> Instruction {
     // Perform the signed multiplication in two's complement
     let acc = correct(MEMORY.read(ACC));
-    let n = MEMORY.read(k);
+    let n: u16 = read_16(k);
     let product: i32 = as_i32(acc) * as_i32(n);
 
     // Handling as defined in documentation
     if product == 0 {
         // acc != +/- 0 or signs are equal
-        if ( acc != 0 && acc != NEG_ZERO ) || sign_bit(acc) == sign_bit(n) { 
+        if (acc == 0 || acc == NEG_ZERO) && bit16(acc) != bit16(n) {
+            MEMORY.write(ACC, NEG_ZERO);
+            MEMORY.write(L, NEG_ZERO);
+        } else {
             MEMORY.write(ACC, 0);
             MEMORY.write(L, 0);
         }
-        else {
-            MEMORY.write(ACC, NEG_ZERO);
-            MEMORY.write(L, NEG_ZERO);
-        }
-        return ;
+
+        return Instruction("MP", k);
     }
 
     let product = ones_complement32(product);
-    let sign_bit = (product >> 31) as u16;
+    let sign_bit: u16 = ((product >> 31) as u16) << 15;
     // SP values are scaled by a factor of 2^-14, that's why the results "start" in the L register
     let low= (product % (2 << 13)) as u16; // Takes the lower 14 bits
     let high = ((product >> 14) % (2 << 13)) as u16; // Takes bits 28 through 15
 
-    MEMORY.write(ACC, high + sign_bit);
+    MEMORY.write(ACC, sign_extend(high + sign_bit)); // Honestly, I don't know whether the result should be sign_extended or not :/
     MEMORY.write(L, low + sign_bit);
+
+    Instruction("MP", k)
 }
 
 // Modular Substract
 // In this instruction the accumulator and the value at k should contain
 // a two's complement value
-pub fn msu(k: ErasableAddress) {
+pub(crate) fn msu(k: ErasableAddress) -> Instruction {
     let n = MEMORY.read(k);
     let acc = MEMORY.read(ACC);
     if is_16bit(k) {
@@ -490,10 +517,12 @@ pub fn msu(k: ErasableAddress) {
         diff += (diff & 0b0100000000000000) << 1; // copy bit 15 into bit 16
         MEMORY.write(ACC, diff);
     }
+
+    Instruction("MSU", k)
 }
 
 // Exchange Q and k
-pub fn qxch(k: ErasableAddress) {
+pub(crate) fn qxch(k: ErasableAddress) -> Instruction {
     let q = MEMORY.read(Q);
     let val = MEMORY.read(k);
 
@@ -504,24 +533,24 @@ pub fn qxch(k: ErasableAddress) {
         MEMORY.write(Q, sign_extend(val));
         MEMORY.write(k, correct(q));
     }
+
+    Instruction("QXCH", k)
 }
 
 // Substract
-pub fn su(k: ErasableAddress) {
+pub(crate) fn su(k: ErasableAddress) -> Instruction {
     let acc = MEMORY.read(ACC);
-    let mut n = MEMORY.read(k);
+    let n = read_16(k);
 
-    if !is_16bit(k) {
-        n = sign_extend(n);
-    }
-    n = !n;
-
-    let sum = add_modified(acc, n);
+    let sum = add_modified(acc, !n);
     MEMORY.write(ACC, sum);
+
+    Instruction("SU", k)
 }
 
+// WORK TO DO HERE
 // Exchange A and k
-pub fn xch(k: ErasableAddress) {
+pub(crate) fn xch(k: ErasableAddress) -> Instruction {
     let acc = MEMORY.read(ACC);
     let val = MEMORY.read(k);
 
@@ -532,31 +561,39 @@ pub fn xch(k: ErasableAddress) {
         MEMORY.write(ACC, sign_extend(val));
         MEMORY.write(k, correct(acc));
     }
+
+    Instruction("XCH", k)
 }
 
 // Transfer to storage
-pub fn ts(k: ErasableAddress) {
+pub(crate) fn ts(k: ErasableAddress) -> Instruction {
     let acc = MEMORY.read(ACC);
-    let overflow = save_corrected(acc, k);
+    let overflow = save_corrected_return_overflow(acc, k);
 
     // If the accumulator contained an overflow, skip the next intruction and save either +1 or -1 in the acc, depending on the sign
     // of the overflow. If k is the accumulator itself, leave its value unchanged (OVSK instruction)
     if overflow != 0 {
-        if k != 0 {
+        if k != ACC {
             MEMORY.write(ACC, overflow);
         }
         MEMORY.write(Z, MEMORY.read(Z) + 1);
     }
+
+    Instruction("TS", k)
 }
 
 // Transfer control setting up return
-pub fn tc(k: Address) {
+pub(crate) fn tc(k: Address) -> Instruction {
     let z = MEMORY.read(Z);
     MEMORY.write(Z, k);
     MEMORY.write(Q, z);
+
+    Instruction("TC", k)
 }
 
 // Transfer control to fixed (does not set up return)
-pub fn tcf(k: FixedAddress) {
+pub(crate) fn tcf(k: FixedAddress) -> Instruction {
     MEMORY.write(Z, k);
+
+    Instruction("TCF", k)
 }

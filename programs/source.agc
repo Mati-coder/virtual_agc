@@ -1,26 +1,36 @@
-ENTRY: 
-    CS THRESHOLD
-    AD N1
-    AD N2
+
+ENTRY:
+    CA SCREENSIZE
     EXTEND
-    BZMF NOT
+    DIM ACC
+LOOP:
+    TS I
+
+    INDEX I
+    CA MAP
+
+    INDEX I
+    TS SCREEN
+
+    CCS I
+
+    TCF LOOP
+
+    TCF EXIT
+
+EXIT:
     CA ZERO
     INCR ACC
     TCF EXIT
-NOT:
-    CA ZERO
-    TCF EXIT
 
-N1:
-    DEC 30
-N2:
-    DEC -55
-THRESHOLD:
-    DEC -10
-
-EXIT:
-    
-DONOTHING:
-    TCF DONOTHING
-
- 
+SCREENSIZE:
+    DEC 8
+MAP:
+    DEC 253
+    DEC 197
+    DEC 145
+    DEC 191
+    DEC 133
+    DEC 237
+    DEC 129
+    DEC 191
