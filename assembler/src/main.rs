@@ -81,7 +81,7 @@ impl<'a> From<&'a str> for ExternalSymbol<'a> {
 struct DefinedSymbol<'a> {
     name: &'a str,
     r#type: SymbolType,
-    value: u16,
+    address: u16,
 }
 impl<'a> PartialEq for DefinedSymbol<'a> {
     fn ne(&self, other: &Self) -> bool {
@@ -93,8 +93,8 @@ impl<'a> PartialEq for DefinedSymbol<'a> {
     }
 }
 impl<'a> DefinedSymbol<'a> {
-    const fn new (name: &'a str, r#type: SymbolType, value: u16) -> Self {
-        Self {name, r#type, value}
+    const fn new (name: &'a str, r#type: SymbolType, address: u16) -> Self {
+        Self {name, r#type, address}
     }
 }
 
@@ -281,48 +281,74 @@ fn main() {
     let start_of_fixed = 2048; 
     let mut erasable = 271; // Start of RAM
 
-    let mut defined: Vec<DefinedSymbol> = vec![];
+    let mut defined: Vec<DefinedSymbol> = vec![ACC, L, Q, Z, BB, ZERO, PANTALLA, BTNUP, BTNRGT, BTNDWN, BTNLFT, BTN1, BTN2, POTE];
     let mut binary: Vec<u16> = vec![];
+
+    let mut len_code_total = 0;
+    let mut len_code = [0; 2];
+    let mut len_data = [0; 2];
+
+    for file_index in 0..contents.len() {
+        let code_len = contents[file_index].code.len();
+        let data_len = contents[file_index].data.len();
+
+        len_code_total += code_len;
+
+        len_code[file_index] = code_len;
+        len_data[file_index] = data_len;
+    }
 
     for file_index in 0..contents.len() {
         for label in &contents[file_index].labels {
             let mut section_offset = start_of_fixed;
 
-            if file_index > 1 && label.section == Section::Code {
-                section_offset += contents[file_index-1].code.len();
+            if file_index > 0 && label.section == Section::Code {
+                section_offset += len_code[file_index-1];
             }
             if label.section == Section::Data {
-                section_offset += contents[file_index].code.len();
+                section_offset += len_code_total;
 
-                if file_index > 1 {
-                    section_offset += contents[file_index-1].code.len();
-                    section_offset += contents[file_index-1].data.len();
+                if file_index > 0 {
+                    section_offset += len_data[file_index-1]
                 }
             }
 
             defined.push(label.define(section_offset as u16));
-        }
 
+            println!("{:?} {:?}", defined.last().unwrap(), section_offset);
+        }
+    }
+
+
+    for file_index in 0..contents.len() {
         for instruction in &contents[file_index].code {
-            let mut assembled: u16 = 0; // Decoding of the instruction should be done here
+            let mut assembled: u16 = decode(instruction.operation); // Decoding of the instruction should be done here
             
             let op_defined = instruction.operand.define(erasable);
 
             if defined.contains(&op_defined) {
-                assembled += defined.iter().find(|&e| e == &op_defined).unwrap().value
+                assembled += defined.iter().find(|&e| e == &op_defined).unwrap().address
             } else if op_defined.r#type == SymbolType::Label {
-                panic!("Label never defined")
+                panic!("Label never defined, {:?}", op_defined)
             } else {
+                // Create new variable
                 assembled += erasable;
                 erasable += 1;
                 defined.push(op_defined);
             }
 
             binary.push(assembled);
-            println!("{:?} {:?}", 
-            instruction, assembled);
+            println!("{:?} {:?}", instruction, assembled);
         }
-
-        
     }
+
+    let mut to_file: String = "[".to_string();
+    let mut bin_iter = binary.iter();
+
+    for _ in 0..1024 {
+        to_file.push_str(&format!("\nMemloc::new({}),", bin_iter.next().unwrap_or(&0)));
+    }
+    to_file.push_str("\n]");
+
+    fs::write("../agc_emulator/memory/fixed.in", to_file).unwrap();
 }

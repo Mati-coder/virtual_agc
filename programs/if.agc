@@ -1,0 +1,27 @@
+.config
+    EXTERN FIN
+    
+.code
+IF:
+    CA POTE
+    EXTEND
+    SU LIMITE
+
+    EXTEND
+    BZMF NO
+
+    CA FILACOMP
+    TCF IMPRIMIR
+
+NO:
+    CA ZERO
+
+IMPRIMIR:
+    TS PANTALLA
+    TCF FIN
+
+.data
+LIMITE:
+    DEC 2000
+FILACOMP:
+    DEC 255
