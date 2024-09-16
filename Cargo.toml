@@ -1,7 +1,0 @@
-[workspace]
-resolver = "1"
-members = [
-    "agc_emulator",
-    "cli_interface",
-    "rppico_interface"
-]

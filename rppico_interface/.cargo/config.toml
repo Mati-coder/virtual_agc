@@ -1,3 +1,6 @@
+[alias]
+rr = "run --release"
+
 [build]
 target = "thumbv6m-none-eabi"
 
@@ -7,6 +10,4 @@ rustflags = [
     "-C", "link-arg=-Tlink.x",
     "-C", "no-vectorize-loops",
 ]
-panic = "abort"
-
 runner = "elf2uf2-rs -d"

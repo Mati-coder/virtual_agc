@@ -1,3 +1,3 @@
-.end
+.code
 DONOTHING:
 	TCF DONOTHING

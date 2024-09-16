@@ -1,4 +1,7 @@
-.threshold
+.config
+    EXTERN DONOTHING
+
+.code
 ENTRY:
     CS THRESHOLD
     AD N1

@@ -3,6 +3,9 @@ name = "rppico_interface"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+panic = "abort"
+
 [dependencies]
 cortex-m = "0.7.7"
 cortex-m-rt = "0.7.3"
@@ -16,3 +19,4 @@ agc_emulator = { path = "../agc_emulator" }
 [lints.rust]
 unused_mut = "allow"
 unused_variables = "allow"
+

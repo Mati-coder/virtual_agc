@@ -3,6 +3,10 @@
 version = 3
 
 [[package]]
+name = "agc_emulator"
+version = "0.1.0"
+
+[[package]]
 name = "arrayvec"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -143,19 +147,6 @@ name = "embedded-io"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "edd0f118536f44f5ccd48bcb8b111bdc3de888b58c74639dfb034a357d0f206d"
-
-[[package]]
-name = "emulator_rppico"
-version = "0.1.0"
-dependencies = [
- "cortex-m",
- "cortex-m-rt",
- "embedded-hal 1.0.0",
- "max7219",
- "rp-pico",
- "rp2040-hal",
- "rp2040-pac",
-]
 
 [[package]]
 name = "frunk"
@@ -403,6 +394,20 @@ dependencies = [
  "cortex-m-rt",
  "critical-section",
  "vcell",
+]
+
+[[package]]
+name = "rppico_interface"
+version = "0.1.0"
+dependencies = [
+ "agc_emulator",
+ "cortex-m",
+ "cortex-m-rt",
+ "embedded-hal 1.0.0",
+ "max7219",
+ "rp-pico",
+ "rp2040-hal",
+ "rp2040-pac",
 ]
 
 [[package]]

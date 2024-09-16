@@ -1,20 +1,20 @@
 SOURCES = [
-    "programs/threshold.agc",
-    "programs/end_loop.agc"
+    "programs/end_loop.agc",
+    "programs/threshold.agc"
 ]
 TARGET = "emulator_rppico/src/Memory/assembler_output.rs"
 
-instructions_general = {
-    "CA":     0b011000000000000,
-    "INDEX":  0b101000000000000,
-    "TC":     0b000000000000000,
-    "CS":     0b100000000000000,
-    "AD":     0b110000000000000,
-    "MASK":   0b111000000000000,
-    "DCA":    0b011000000000001,
-    "DCS":    0b100000000000001,
-    "MP":     0b111000000000000,
-}
+instructions_general = [
+    "CA",
+    "INDEX",
+    "TC",
+    "CS",
+    "AD",
+    "MASK",
+    "DCA",
+    "DCS",
+    "MP",
+]
 
 instructions_erasable = {
     "CCS":    0b001000000000000,
@@ -33,29 +33,29 @@ instructions_erasable = {
     "XCH":    0b101110000000000,
 }
 
-instructions_fixed = {
-    "TCF":    0b001000000000000,
-    "BZF":    0b001000000000000,
-    "BZMF":   0b110000000000000,
-}
+instructions_fixed = [
+    "TCF",
+    "BZF",
+    "BZMF",
+]
 
-instructions_implied_and_named = {
-    "EXTEND": 6,
-    "INHINT": 4,
-    "RELINT": 3,
-    "RETURN": 2,
+instructions_implied_and_named = [
+    "EXTEND",
+    #"INHINT": 4,
+    #"RELINT": 3,
+    "RETURN",
 
-    "COM":    0b100000000000000,
-    "DCOM":   0b100000000000001,
-    "DDOUBL": 0b001000000000001,
-    "DOUBLE": 0b011000000000000,
-    "DTCB":   0b010101000000110,
-    "DTCF":   0b010101000000101,
-    "OVSK":   0b010110000000000,
-    "SQUARE": 0b011100000000000,
-    "ZL":     0b001001000000111,
-    "ZQ":     0b001001000000111,
-}
+    # "COM":    0b100000000000000,
+    # "DCOM":   0b100000000000001,
+    # "DDOUBL": 0b001000000000001,
+    # "DOUBLE": 0b011000000000000,
+    # "DTCB":   0b010101000000110,
+    # "DTCF":   0b010101000000101,
+    # "OVSK":   0b010110000000000,
+    # "SQUARE": 0b011100000000000,
+    # "ZL":     0b001001000000111,
+    # "ZQ":     0b001001000000111,
+]
 
 instructions_extended = [
     "DV",
@@ -71,22 +71,45 @@ instructions_extended = [
     "MP",
 ]
 
-all_instructions = []
-all_instructions.extend(instructions_general.keys())
-all_instructions.extend(instructions_fixed.keys())
-all_instructions.extend(instructions_erasable.keys())
+instructions_with_operand = []
+instructions_with_operand.extend(instructions_general)
+instructions_with_operand.extend(instructions_fixed)
+instructions_with_operand.extend(instructions_erasable)
 
-instructions_with_operand = ["DEC"]
-instructions_with_operand.extend(all_instructions)
-
-all_instructions.extend(instructions_implied_and_named.keys())
-
-
-labels = {
-    
+decodings = {
+    "CA":     0b011000000000000,
+    "INDEX":  0b101000000000000,
+    "TC":     0b000000000000000,
+    "CS":     0b100000000000000,
+    "AD":     0b110000000000000,
+    "MASK":   0b111000000000000,
+    "DCA":    0b011000000000001,
+    "DCS":    0b100000000000001,
+    "MP":     0b111000000000000,
+    "CCS":    0b001000000000000,
+    "TS":     0b101100000000000,
+    "DIM":    0b010110000000000,
+    "ADS":    0b010110000000000,
+    "AUG":    0b010100000000000,
+    "DAS":    0b010000000000001,
+    "DV":     0b001000000000000,
+    "DXCH":   0b101010000000001,
+    "INCR":   0b010100000000000,
+    "LXCH":   0b010010000000000,
+    "MSU":    0b010000000000000,
+    "QXCH":   0b010010000000000,
+    "SU":     0b110000000000000,
+    "XCH":    0b101110000000000,
+    "TCF":    0b001000000000000,
+    "BZF":    0b001000000000000,
+    "BZMF":   0b110000000000000,
+    "EXTEND": 6,
+    #"INHINT": 4,
+    #"RELINT": 3,
+    #"RETURN": 2,
 }
 
-builtin_addresses = {
+builtin_variables = {
     "ACC": 0,
     "L": 1,
     "Q": 2,
@@ -98,6 +121,8 @@ builtin_addresses = {
 
 vectors = {
 }
+
+sections = [None, "config", "code", "data"]
 
 def is_valid_name(name:str):
     return not ( not name.isalnum() or name[0].isdecimal() )
@@ -116,14 +141,12 @@ def error(err:str, line:list, index:int):
 #   Ensure no duplicated variables (to share variables one file doesn't declare them while another file uses EXTERN \VARIABLE\)
 #   Data sections are always placed at the end of the program, one after another in the order of parsing of the files
 
-sections = []
-section_instructions = {}
-file_symbols = []
+file_content = []
 
 # Parse all files
-for path_index in range(len(SOURCES)):
-    path = SOURCES[path_index]
-    file_symbols.append({"labels": set({}), "operands": set({})})
+for file_index in range(len(SOURCES)):
+    path = SOURCES[file_index]
+    file_content.append({"extern_symbols": set({}), "labels": set({}), "operands": set({}), "code": [], "data": []})
     # Load file
     file = []
     with open(path, "r") as f:
@@ -149,118 +172,194 @@ for path_index in range(len(SOURCES)):
         # Ignore comments
         if first[0] == '#':
             continue
-            
-        # Data section requires special handling
-        if current_section == "data":
-            pass
-            # Special handling TODO
         
         # Handle sections
         if first[0] == '.':
             name = first[1:] # Remove the .
             
-            if not is_valid_name(name):
+            if not name in sections:
                 error("Invalid section name", line, i)
-
-            # Ensure no duplicated sections (except data)
-            if name in sections:
-                error("Duplicated section", line, i)
-
-            # Create new section
-            if name != "data":
-                sections.append((name, path_index)) 
-                section_instructions[name] = []
+            
+            if sections.index(name) < sections.index(current_section):
+                error("There can only be one section of each type, and should be in the order 'config', 'code', 'data'", line, i)
 
             current_section = name 
-            continue
-        
-        # Add label to section. Data stored are label name and offset with respect to the start of the section
-        if first[-1] == ":":
-            if current_section == None:
-                error("Every piece of code should be part of a section", line, i)
-            name = first[:-1]
-
-            if not is_valid_name(name):
-                error("Invalid label name", line, i)
-
-            if name in [label[0] for label in file_symbols[path_index]["labels"]]:
-                error("Duplicated label name", line, i)
-            
-            file_symbols[path_index]["labels"].add((name, current_section, len(section_instructions[current_section])))
-            continue
-
-        # Handle instructions with operand
-        if first in instructions_with_operand: 
-            if current_section == None:
-                error("Every piece of code should be part of a section", line, i)
-            name = first
-
-            # Ensure DEC is only used in the data section
-            if name == "DEC":
-                if current_section != "data":
-                    error("DEC should only be used in the data section", line, i)
-
-            # Ensure extended instructions are preceded by an EXTEND
-            if name in instructions_extended:
-                if not next_extended:
-                    error("Extended instructions not preceded by extend", line, i)
-
-            # Reset the extend flag except in the case of an INDEX instruction
-            if not name == "INDEX":
-                next_extended = False
-
-            if len(line) < 2:
-                error("No operand found", line, i)
-            operand = line[1]
-
-            # Check if the operand is valid
-            if name == "DEC":
-                num = operand
-                if operand[0] == "-":
-                    num = operand[1:]
-
-                if not num.isdecimal():
-                    error("Operand is not a valid number", line, i)
-                
-                if int(num) >= 2**14:
-                    error("Operand number is too big", line, i)
-            else:
-                if not is_valid_name(operand):
-                    error("Operand name is invalid", line, i)
-
-                # Ensure the operand is not a built-in address nor is it defined in an external file TODO
-                if operand not in builtin_addresses.keys():
-                    file_symbols[path_index]["operands"].add(operand)
-
-            if len(line) > 2:
-                # Ensure comments start with #
-                if line[2][0] != "#":
-                    error("Comments should start with #", line, i)
-
-            section_instructions[current_section].append((name, operand))
-            continue
-        
-        if first in instructions_implied_and_named.keys():
-            if current_section == None:
-                error("Every piece of code should be part of a section", line, i)
-            name = first
-
-            next_extended = False
-            if name == "EXTEND":
-                next_extended = True
 
             # Ensure comments start with #
             if len(line) > 1:
                 if line[1][0] != "#": 
                     error("Comments should start with #", line, i)
+            continue
 
-            # In operations without operand we set it to the acc, meaning address 0, so the instruction isn't changed
-            section_instructions[current_section].append((name, "ACC"))
+        if current_section == "config":
+            if first != "EXTERN":
+                error("You can only use EXTERN commands in this section", line, i)
+
+            if len(line) < 2:
+                error("No symbol found", line, i)
+            symbol = line[1]
+
+            if symbol in file_content[file_index]["extern_symbols"]:
+                error("Repeated symbol", line, i)
+
+            file_content[file_index]["extern_symbols"].add(symbol)
+
+            # Ensure comments start with #
+            if len(line) > 2:
+                if line[2][0] != "#":
+                    error("Comments should start with #", line, i)
+            continue
+
+        if current_section == "data":
+            # Add label. Data stored are label name and offset with respect to the start of the section
+            if first[-1] == ":":
+                name = first[:-1]
+
+                if not is_valid_name(name):
+                    error("Invalid label name", line, i)
+
+                # Ignore labels defined elsewhere
+                if name in file_content[file_index]["extern_symbols"]:
+                    continue
+
+                if name in [label[0] for label in file_content[file_index]["labels"]]:
+                    error("Duplicated label name", line, i)
+                
+                file_content[file_index]["labels"].add((name, "data", len(file_content[file_index]["data"])))
+
+                # Ensure comments start with #
+                if len(line) > 1:
+                    if line[1][0] != "#": 
+                        error("Comments should start with #", line, i)
+
+                continue
+
+            if first != "DEC":
+                error("Only DEC commands can be used in the data section", line, i)
+
+            if len(line) < 2:
+                error("No operand found", line, i)
+            num = line[1]
+
+            # Remove sign in order to check validity
+            ab = num
+            if num[0] == "-":
+                ab = num[1:]
+
+            if not ab.isdecimal():
+                error("Number is not a valid", line, i)
+            
+            if int(ab) >= 2**14:
+                error("Number is too big", line, i)
+
+            file_content[file_index]["data"].append(num)
+
+            # Ensure comments start with #
+            if len(line) > 2:
+                if line[2][0] != "#":
+                    error("Comments should start with #", line, i)
             continue
         
-        error("Invalid instruction", line, i)
+        if current_section == "code":
+            # Add label. Data stored are label name, section and offset with respect to the start of the section
+            if first[-1] == ":":
+                name = first[:-1]
 
-print(sections, section_instructions, file_symbols)
+                # Ignore labels defined elsewhere
+                if name in file_content[file_index]["extern_symbols"]:
+                    continue
+
+                if not is_valid_name(name):
+                    error("Invalid label name", line, i)
+
+                if name in [label[0] for label in file_content[file_index]["labels"]]:
+                    error("Duplicated label name", line, i)
+                
+                file_content[file_index]["labels"].add((name, "code", len(file_content[file_index]["code"])))
+
+                # Ensure comments start with #
+                if len(line) > 1:
+                    if line[1][0] != "#": 
+                        error("Comments should start with #", line, i)
+                continue
+
+            # Handle instructions with operand
+            if first in instructions_with_operand: 
+                name = first
+
+                # Ensure extended instructions are preceded by an EXTEND
+                if name in instructions_extended:
+                    if not next_extended:
+                        error("Extended instructions not preceded by extend", line, i)
+
+                # Reset the extend flag except in the case of an INDEX instruction
+                if not name == "INDEX":
+                    next_extended = False
+
+                if len(line) < 2:
+                    error("No operand found", line, i)
+                operand = line[1]
+
+                # Check if the operand is valid
+                if not is_valid_name(operand):
+                    error("Operand name is invalid", line, i)
+
+                # Ensure the operand is not a built-in address nor is it defined in an external file TODO
+                # Do not define builtin operands
+                if operand not in builtin_variables.keys() and \
+                   operand not in file_content[file_index]["extern_symbols"]:
+                    file_content[file_index]["operands"].add(operand)
+                
+                # Ensure comments start with #
+                if len(line) > 2:
+                    if line[2][0] != "#":
+                        error("Comments should start with #", line, i)
+
+                file_content[file_index]["code"].append((name, operand))
+                continue
+            
+            if first in instructions_implied_and_named:
+                name = first
+
+                next_extended = False
+                if name == "EXTEND":
+                    next_extended = True
+
+                # Ensure comments start with #
+                if len(line) > 1:
+                    if line[1][0] != "#": 
+                        error("Comments should start with #", line, i)
+
+                # In operations without operand we set it to the acc, meaning address 0, so the instruction isn't changed
+                file_content[file_index]["code"].append((name, "ACC"))
+                continue
+            
+        error("Piece of code is outside of a section", line, i)
+
+
+start_fixed = 2048
+start_erasable = 271
+binary = []
+
+for i in range(len(file_content)):
+    for operand in file_content[i]["operands"]:
+        if operand in [label[0] for label in file_content[file_index]["labels"]]:
+            file_content[i]["operands"].remove(operand)
+            
+
+for current_file in [1, 0]:
+    for instruction in file_content[current_file]["code"]:
+        ins = instruction[0]
+        op = instruction[1]
+        assembled = decodings[ins]
+
+        if ins in instructions_general:
+            if op in builtin_variables:
+                assembled += builtin_variables[op]
+            
+
+
+print(file_content)
 
 
 

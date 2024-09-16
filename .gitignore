@@ -1,1 +1,4 @@
-/target
+agc_emulator/target
+assembler/target
+cli_interface/target
+rppico_interface/target
