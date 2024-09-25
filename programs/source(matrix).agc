@@ -1,4 +1,9 @@
-ENTRY:
+TODO
+
+.config
+
+.code
+MATRIZ:
     VEC GRID 8 8
     CA GRIDSIZE
     EXTEND

@@ -1,14 +1,13 @@
-.config
-    EXTERN FIN
-    
 .code
 IF:
-    CA POTE
+    CA LIMITE
     EXTEND
-    SU LIMITE
+    SU POTE
+
+    COM
 
     EXTEND
-    BZMF NO
+    BZMF FOR
 
     CA FILACOMP
     TCF IMPRIMIR

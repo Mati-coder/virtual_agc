@@ -35,9 +35,10 @@ pub const FIXED: [&'static str; 3] = [
     "BZF"
 ];
 
-pub const IMPLIED: [&'static str; 2] = [
+pub const IMPLIED: [&'static str; 3] = [
     "EXTEND",
     "RETURN",
+    "COM"
 ];
 
 pub const EXTENDED: [&'static str; 11] = [
@@ -60,7 +61,7 @@ pub const Q: DefinedSymbol = DefinedSymbol::new("Q", crate::SymbolType::Variable
 pub const Z: DefinedSymbol = DefinedSymbol::new("Z", crate::SymbolType::Variable, 5);
 pub const BB: DefinedSymbol = DefinedSymbol::new("BB", crate::SymbolType::Variable, 6);
 pub const ZERO: DefinedSymbol = DefinedSymbol::new("ZERO", crate::SymbolType::Variable, 7);
-pub const PANTALLA: DefinedSymbol = DefinedSymbol::new("PANTALLA", crate::SymbolType::Variable, 256);
+pub const PANTALLA: DefinedSymbol = DefinedSymbol::new("PANTALLA", crate::SymbolType::VariableTable(8), 256);
 pub const BTNUP: DefinedSymbol = DefinedSymbol::new("BTNUP", crate::SymbolType::Variable, 264);
 pub const BTNRGT: DefinedSymbol = DefinedSymbol::new("BTNRGT", crate::SymbolType::Variable, 265);
 pub const BTNDWN: DefinedSymbol = DefinedSymbol::new("BTNDWN", crate::SymbolType::Variable, 266);
@@ -97,6 +98,7 @@ pub fn decode(operation: &str) -> u16 {
         "TCF"=>    0b001000000000000,
         "BZF"=>    0b001000000000000,
         "BZMF"=>   0b110000000000000,
+        "COM"=>    0b100000000000000,
         "EXTEND"=> 6,
         _ => panic!("INVALID")
     }

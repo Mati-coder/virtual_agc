@@ -1,137 +1,23 @@
 use std::fs;
 mod constants;
 use constants::*;
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-enum SymbolType {
-    Label,
-    Variable,
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-enum Section {
-    None,
-    Config,
-    Code,
-    Data,
-}
-impl From<&str> for Section {
-    fn from(value: &str) -> Self {
-        match value {
-            "config" => Section::Config,
-            "code" => Section::Code,
-            "data" => Section::Data,
-            _ => panic!("Invalid section (thrown from conversion)")
-        }
-    }
-}
-
-#[derive(Debug, Eq)]
-struct UndefinedLabel<'a> {
-    name: &'a str,
-    section: Section,
-    offset: u16,
-}
-impl<'a> PartialEq for UndefinedLabel<'a> {
-    fn ne(&self, other: &Self) -> bool {
-        !self.eq(other)
-    }
-    
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
-
-impl<'a> UndefinedLabel<'a> {
-    fn new(name: &'a str, section: Section, offset: u16) -> Self {
-        Self{name, section, offset}
-    }
-
-    fn define(&self, section_start: u16) -> DefinedSymbol<'a> {
-        DefinedSymbol::new(self.name, SymbolType::Label, section_start + self.offset)
-    }
-}
-
-#[derive(Debug)]
-struct UndefinedSymbol<'a> {
-    name: &'a str,
-    r#type: Option<SymbolType>,
-}
-impl<'a> UndefinedSymbol<'a> {
-    const fn new (name: &'a str, r#type: Option<SymbolType>) -> Self {
-        Self {name, r#type}
-    }
-
-    fn define(&self, value: u16) -> DefinedSymbol<'a> {
-        DefinedSymbol::new(self.name, self.r#type.unwrap_or(SymbolType::Variable), value)
-    }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-struct ExternalSymbol<'a> {
-    name: &'a str,
-}
-impl<'a> From<&'a str> for ExternalSymbol<'a> {
-    fn from(s: &'a str) -> Self {
-        Self {name: s}
-    }
-}
-
-#[derive(Debug, Eq)]
-struct DefinedSymbol<'a> {
-    name: &'a str,
-    r#type: SymbolType,
-    address: u16,
-}
-impl<'a> PartialEq for DefinedSymbol<'a> {
-    fn ne(&self, other: &Self) -> bool {
-        !self.eq(other)
-    }
-    
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name
-    }
-}
-impl<'a> DefinedSymbol<'a> {
-    const fn new (name: &'a str, r#type: SymbolType, address: u16) -> Self {
-        Self {name, r#type, address}
-    }
-}
-
-#[derive(Debug)]
-struct Instruction<'a> {
-    operation: &'a str,
-    operand: UndefinedSymbol<'a>,
-}
-impl<'a> Instruction<'a> {
-    fn new(operation: &'a str, operand: UndefinedSymbol<'a>) -> Self {
-        Self {operation, operand}
-    }
-}
-
-#[derive(Debug)]
-struct FileContent<'a> {
-    external: Vec<ExternalSymbol<'a>>,
-    labels: Vec<UndefinedLabel<'a>>,
-    code: Vec<Instruction<'a>>,
-    data: Vec<&'a str>
-}
-
-impl FileContent<'_> {
-    fn new() -> Self {
-        Self{external: vec![],labels: vec![],code: vec![],data: vec![]}
-    }
-}
+mod types;
+use types::*;
 
 fn main() {
+    const FILE_COUNT: usize = 2;
+    
     let files = [
-        fs::read_to_string("../programs/threshold.agc").unwrap(),
-        fs::read_to_string("../programs/end_loop.agc").unwrap(),
+        //fs::read_to_string("../programs/if.agc").unwrap(),
+        fs::read_to_string("../programs/for.agc").unwrap(),
+        fs::read_to_string("../programs/fin.agc").unwrap(),
     ];
 
     let sections = [Section::None, Section::Config, Section::Code, Section::Data];
-    let mut contents: [FileContent; 2] = [FileContent::new(), FileContent::new()];
+    let mut contents: [FileContent; FILE_COUNT] = [FileContent::new(), FileContent::new()];
+    let mut tables: Vec<UndefinedTable> = vec![];
 
+    // Parse files
     for file_index in 0..files.len() {
         let mut current_section = Section::None;
         let mut next_extended = false;
@@ -169,27 +55,17 @@ fn main() {
             }
 
             if current_section == Section::Config {
-                if first != "EXTERN" {
-                    panic!("Only EXTERN in config")
+                if first == "VEC" {
+                    let name = line.next().expect("No name");
+                    let len = line.next().expect("No len").parse().unwrap();
+                    tables.push(UndefinedTable::new(name, len));
                 }
-                
-                let symbol = line.next().expect("No Symbol");
-
-                if contents[file_index].external.contains(&symbol.into()) {
-                    panic!("Repeated symbol {}", symbol);
-                }
-
-                contents[file_index].external.push(symbol.into());
             }
 
             if current_section == Section::Data {
                 // For labels
                 if first.ends_with(":") {
                     let name = &first[..first.len()-1];
-
-                    if contents[file_index].external.contains(&name.into()) {
-                        continue;
-                    }
 
                     let label = UndefinedLabel::new(name, Section::Data, contents[file_index].data.len() as u16);
 
@@ -205,21 +81,23 @@ fn main() {
                     panic!("Only DEC in data")
                 }
 
-                // HANDLE THE NUMBERS CORRECTLY TODO
-
                 let number = line.next().expect("No number");
-                
-                contents[file_index].data.push(number)
+                let num;
+                if number.starts_with("-") {
+                    let number = &number[1..];
+                    let number: u16 = number.parse().unwrap();
+                    num = (!number) % 32768;
+                } else {
+                    num = number.parse().unwrap();
+                }
+
+                contents[file_index].data.push(num)
             }
 
             if current_section == Section::Code {
                 // For labels
                 if first.ends_with(":") {
                     let name = &first[..first.len()-1];
-
-                    if contents[file_index].external.contains(&name.into()) {
-                        continue;
-                    }
 
                     let label = UndefinedLabel::new(name, Section::Code, contents[file_index].code.len() as u16);
 
@@ -285,8 +163,8 @@ fn main() {
     let mut binary: Vec<u16> = vec![];
 
     let mut len_code_total = 0;
-    let mut len_code = [0; 2];
-    let mut len_data = [0; 2];
+    let mut len_code = [0; FILE_COUNT];
+    let mut len_data = [0; FILE_COUNT];
 
     for file_index in 0..contents.len() {
         let code_len = contents[file_index].code.len();
@@ -298,49 +176,115 @@ fn main() {
         len_data[file_index] = data_len;
     }
 
+    // Define all labels
     for file_index in 0..contents.len() {
         for label in &contents[file_index].labels {
             let mut section_offset = start_of_fixed;
 
+            // Add the len of the previous code sections
             if file_index > 0 && label.section == Section::Code {
-                section_offset += len_code[file_index-1];
+                for i in 0..=file_index-1 {
+                    section_offset += len_code[i];
+                }
             }
+
+            // Add the len of all code sections and of previous data sections
             if label.section == Section::Data {
                 section_offset += len_code_total;
 
                 if file_index > 0 {
-                    section_offset += len_data[file_index-1]
+                    for i in 0..=file_index-1 {
+                        section_offset += len_data[i];
+                    }
                 }
             }
 
-            defined.push(label.define(section_offset as u16));
+            let len;
+            let und = &UndefinedTable::new(label.name, 0);
+            if tables.contains(und) {
+                len = tables.iter().find(|&e| e == und).unwrap().len;
+                println!("Fixed table {} added, len {}", label.name, len);
+            } else {
+                len = 0;
+            }
+
+            let defined_label = label.define(section_offset as u16, len);
+            if defined.contains(&defined_label) {
+                panic!("Label {} defined in multiple files", defined_label.name)
+            }
+            defined.push(defined_label);
 
             println!("{:?} {:?}", defined.last().unwrap(), section_offset);
         }
     }
 
-
+    // Assemble all instructions
     for file_index in 0..contents.len() {
         for instruction in &contents[file_index].code {
-            let mut assembled: u16 = decode(instruction.operation); // Decoding of the instruction should be done here
-            
-            let op_defined = instruction.operand.define(erasable);
+            let mut assembled: u16 = decode(instruction.operation);
 
+            let len;
+            let und = &UndefinedTable::new(instruction.operand.name, 0);
+            if tables.contains(und) {
+                len = tables.iter().find(|&e| e == und).unwrap().len;
+                println!("Erasable table {} considered, len {}", instruction.operand.name, len);
+            } else {
+                len = 0;
+            }
+            let op_defined = instruction.operand.define(erasable, len);
+            
             if defined.contains(&op_defined) {
-                assembled += defined.iter().find(|&e| e == &op_defined).unwrap().address
+                let op = defined.iter().find(|&e| e == &op_defined).unwrap();
+                if ERASABLE.contains(&&instruction.operation) {
+                    if op.r#type == SymbolType::Label {
+                        panic!("The operand is a position in fixed memory but the operation works on erasable only, {:?}", instruction)
+                    }
+                    if let SymbolType::LabelTable(_) = op.r#type {
+                        panic!("The operand is a position in fixed memory but the operation works on erasable only, {:?}", instruction)
+                    }
+                    
+                }
+                if FIXED.contains(&&instruction.operation) {
+                    if op.r#type == SymbolType::Variable {
+                        panic!("The operand is a position in erasable memory but the operation works on fixed only, {:?}", instruction)
+                    }
+                    if let SymbolType::VariableTable(_) = op.r#type {
+                        panic!("The operand is a position in erasable memory but the operation works on fixed only, {:?}", instruction)
+                    }
+                }
+                assembled += op.address
             } else if op_defined.r#type == SymbolType::Label {
                 panic!("Label never defined, {:?}", op_defined)
             } else {
+                if op_defined.r#type == SymbolType::Label {
+                    panic!("The operand is a position in fixed memory but the operation works on erasable only, {:?}", instruction)
+                }
+                if let SymbolType::LabelTable(_) = op_defined.r#type {
+                    panic!("The operand is a position in fixed memory but the operation works on erasable only, {:?}", instruction)
+                }
+
                 // Create new variable
                 assembled += erasable;
                 erasable += 1;
+                
                 defined.push(op_defined);
+                
             }
 
             binary.push(assembled);
             println!("{:?} {:?}", instruction, assembled);
         }
     }
+
+    // Add the data sections
+    for file_index in 0..contents.len() {
+        for num in &contents[file_index].data {
+            binary.push(*num);
+            println!("data: {}", num);
+        }
+    }
+
+    //println!("{:#?}", defined);
 
     let mut to_file: String = "[".to_string();
     let mut bin_iter = binary.iter();
@@ -351,4 +295,27 @@ fn main() {
     to_file.push_str("\n]");
 
     fs::write("../agc_emulator/memory/fixed.in", to_file).unwrap();
+
+
+    let mut to_file: String = "match addr {".to_string();
+
+    for symbol in defined {
+        if let SymbolType::LabelTable(len) = symbol.r#type {
+            for i in 0..len {
+                to_file.push_str(&format!("\n\t{} => \"{}+{}\",", symbol.address + i, symbol.name, i));
+            }
+        }
+        else if let SymbolType::VariableTable(len) = symbol.r#type {
+            for i in 0..len {
+                to_file.push_str(&format!("\n\t{} => \"{}+{}\",", symbol.address + i, symbol.name, i));
+            }
+        }
+        else {
+            to_file.push_str(&format!("\n\t{} => \"{}\",", symbol.address, symbol.name));
+        }
+        
+    }
+    to_file.push_str("\n\t_ => \"\",\n}");
+
+    fs::write("../agc_emulator/memory/names.in", to_file).unwrap();
 }

@@ -1,8 +1,4 @@
-.config
-    EXTERN DONOTHING
-
 .code
-ENTRY:
     CS THRESHOLD
     AD N1
     AD N2
@@ -19,6 +15,6 @@ NOT:
 N1:
     DEC 30
 N2:
-    DEC -55
+    DEC 21
 THRESHOLD:
-    DEC -10
+    DEC 50

@@ -30,14 +30,14 @@ fn get_command() -> Command {
             let arg2 = iter.next();
 
             if let Some(arg2) = arg2 {
-                let min = arg1.unwrap_or("48");
-                let min = min.parse().unwrap_or(48);
-                let max = arg2.parse().unwrap_or(255);
+                let min = arg1.unwrap_or("256");
+                let min = min.parse().unwrap_or(256);
+                let max = arg2.parse().unwrap_or(511);
                 return Command::MEM(min, max);
             } else {
-                let max = arg1.unwrap_or("255");
-                let max = max.parse().unwrap_or(255);
-                return Command::MEM(48, max);
+                let max = arg1.unwrap_or("511");
+                let max = max.parse().unwrap_or(511);
+                return Command::MEM(256, max);
             }
         },
         "exit" => return Command::EXIT,
@@ -90,9 +90,9 @@ fn main() {
             },
             Command::SHOW => show = !show,
             Command::MEM(mut min, mut max) => {
-                if min < 48 {min = 48}
-                if max > 256 {max = 255}
-                if max < min {max = 49}
+                if min < 256 {min = 256}
+                if max > 511 {max = 511}
+                if max < min {max = 256}
                 for addr in min..=max {
                     if (addr-min) % col == col-1 {
                         println!("{:<3}: {:<10}", addr, (MEMORY.read(addr)));

@@ -76,6 +76,10 @@ impl Memory {
             _ => unreachable!()
         }
     }
+    
+    pub fn get_address_name(&self, addr: Address) -> &'static str {
+        include!("../memory/names.in")
+    }
 
     pub fn set_extracode(&self) {
         self.extra.write(self.extra.read() | 0x0001) // Set bit 1
@@ -113,48 +117,44 @@ impl Memory {
 #[derive(Debug)]
 struct ErasableMemory {
     // The first 49 values are the central registers or special memory locations
-    erasable_bank0: [Memloc; 208], 
+    erasable_bank1: [Memloc; 256], 
 }
 impl ErasableMemory {
     const fn new() -> Self {
-        Self {erasable_bank0: [MEMLOC_INITIALIZE; 208]}
+        Self {erasable_bank1: [MEMLOC_INITIALIZE; 256]}
     }
 
     fn read(&self, k: ErasableAddress) -> Word {
-        if k > 255 {unimplemented!()} // We've only implemented 1 memory bank
-        return self.erasable_bank0[(k - 48) as usize].read()
+        if k < 255 || k >= 512 {unimplemented!()} // We've only implemented 1 memory bank
+        return self.erasable_bank1[(k - 256) as usize].read()
     }
 
     fn write(&self, k: ErasableAddress, val: Word) {
-        if k > 255 {unimplemented!()} // We've only implemented 1 memory bank
-        self.erasable_bank0[(k - 48) as usize].write(val);
+        if k < 255 || k >= 512 {unimplemented!()} // We've only implemented 1 memory bank
+        self.erasable_bank1[(k - 256) as usize].write(val);
     }
 }
 
 #[derive(Debug)]
 struct FixedMemory {
-    fixed_bank0: [Memloc; 1024]
+    fixed_bank1: [Memloc; 1024]
 }
 impl FixedMemory {
     const fn new() -> Self {
         Self {
-            fixed_bank0: include!("../memory/fixed.in"),
+            fixed_bank1: include!("../memory/fixed.in"),
         }
-    }
-
-    fn get_address_name(addr: Address) -> &'static str {
-        include!("../memory/names.in")
     }
 
     fn read(&self, k: FixedAddress) -> Word {
         if k < 2048 || k >= 3072 {unimplemented!()} // We've only implemented memory bank 0
-        return self.fixed_bank0[(k - 2048) as usize].read()
+        return self.fixed_bank1[(k - 2048) as usize].read()
     }
 
     // Just for debug and testing purposes, not accessible to the "programmer"
     pub(crate) fn write(&self, k: FixedAddress, val: Word) {
         if k < 2048 || k >= 3072 {unimplemented!()} // We've only implemented memory bank 0
-        self.fixed_bank0[(k - 2048) as usize].write(val & ZERO_BIT16);
+        self.fixed_bank1[(k - 2048) as usize].write(val & ZERO_BIT16);
     }
 }
 

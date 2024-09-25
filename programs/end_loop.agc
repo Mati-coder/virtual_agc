@@ -1,3 +1,0 @@
-.code
-DONOTHING:
-	TCF DONOTHING

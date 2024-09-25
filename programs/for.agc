@@ -1,11 +1,11 @@
 .config
-    EXTERN FIN
+    VEC MAPA 8
 .code
 FOR:
     CA ANCHOPANTALLA
     EXTEND
     DIM ACC
-LOOP:
+BUCLE:
     TS I
 
     INDEX I
@@ -16,7 +16,7 @@ LOOP:
 
     CCS I
 
-    TCF LOOP
+    TCF BUCLE
 
     TCF FIN
 
