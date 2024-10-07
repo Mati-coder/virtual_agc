@@ -231,12 +231,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "max7219"
-version = "0.4.2"
+name = "lcd-lcm1602-i2c"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "96ad36f14b96e5e196c3cf1028eba57c8cf4e6045b1d4b68951d23c422400d1c"
+checksum = "77e9f3f5c1fbb71ef8f9de66c2b8c80eea4ad1c4bd27a03cee3baabdb6c43e37"
 dependencies = [
- "embedded-hal 0.2.7",
+ "embedded-hal 1.0.0",
+ "ufmt",
+ "ufmt-write",
 ]
 
 [[package]]
@@ -403,8 +405,9 @@ dependencies = [
  "agc_emulator",
  "cortex-m",
  "cortex-m-rt",
+ "embedded-hal 0.2.7",
  "embedded-hal 1.0.0",
- "max7219",
+ "lcd-lcm1602-i2c",
  "rp-pico",
  "rp2040-hal",
  "rp2040-pac",
@@ -461,6 +464,33 @@ dependencies = [
  "quote",
  "unicode-ident",
 ]
+
+[[package]]
+name = "ufmt"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1a64846ec02b57e9108d6469d98d1648782ad6bb150a95a9baac26900bbeab9d"
+dependencies = [
+ "ufmt-macros",
+ "ufmt-write",
+]
+
+[[package]]
+name = "ufmt-macros"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d337d3be617449165cb4633c8dece429afd83f84051024079f97ad32a9663716"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "ufmt-write"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e87a2ed6b42ec5e28cc3b94c09982969e9227600b2e3dcbc1db927a84c06bd69"
 
 [[package]]
 name = "unicode-ident"

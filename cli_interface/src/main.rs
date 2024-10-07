@@ -56,7 +56,8 @@ fn main() {
             Command::Z => println!("{}", MEMORY.read(Z)),
             Command::RUN(cycles) => {
                 for n in 0..cycles {
-                    let Instruction(ins, addr) = execute(MEMORY.read(MEMORY.read(Z)));
+                    let Instruction(ins, addr) = decode(MEMORY.read(MEMORY.read(Z)));
+                    execute(MEMORY.read(MEMORY.read(Z)));
                     cycles_executed += 1;
                     if show {
                         let name = MEMORY.get_address_name(addr);
@@ -69,15 +70,6 @@ fn main() {
 
                             continue;
                         }
-                        // if name.ends_with('+') {
-                        //     if n % col == col-1 {
-                        //         println!("{:>6} {:>10}{:>2}", ins, name, MEMORY.table_offset(name, addr));
-                        //     } else {
-                        //         print!("{:>6} {:>2}{:>2} || ", ins, name, MEMORY.table_offset(name, addr));
-                        //     }
-
-                        //     continue;
-                        // }
 
                         if n % col == col-1 {
                             println!("|{:>3}| {:>6} {:<10} ", cycles_executed, ins, name);
