@@ -4,6 +4,7 @@
 use core::panic::PanicInfo;
 use embedded_hal::delay::DelayNs;
 use embedded_hal::digital::OutputPin;
+use embedded_hal::digital::InputPin;
 use embedded_hal::digital::StatefulOutputPin;
 use embedded_hal::spi::SpiBus;
 use embedded_hal_0_2::adc::OneShot;
@@ -13,6 +14,9 @@ use rp_pico::hal::pac;
 use rp_pico::hal;
 use hal::fugit::RateExtU32;
 use lcd_lcm1602_i2c;
+use agc_emulator::memory::*;
+use agc_emulator::instructions::decode;
+use agc_emulator::instructions::execute;
 
 #[panic_handler]
 fn panic_handler(_info: &PanicInfo) -> ! {
@@ -100,12 +104,18 @@ fn entry() -> ! {
         .with_rows(2) // two rows
         .init().unwrap();
 
+    lcd.set_cursor(1, 2);
+
     // Potentiometer control variables
     let mut adc = hal::Adc::new(p.ADC, &mut p.RESETS);
     let mut potentiometer = hal::adc::AdcPin::new(pins.gpio26).unwrap();
+    
+    // Ejemplo lectura del pote
     let reading: u16 = adc.read(&mut potentiometer).unwrap();
 
-    loop {}
+    loop {
+        
+    }
 }
 
 

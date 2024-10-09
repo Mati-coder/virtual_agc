@@ -9,7 +9,7 @@ IF:
     EXTEND
     BZMF FOR
 
-    CA FILACOMP
+    CS ZERO
     TCF IMPRIMIR
 
 NO:
@@ -22,5 +22,3 @@ IMPRIMIR:
 .data
 LIMITE:
     DEC 2000
-FILACOMP:
-    DEC 255

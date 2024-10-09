@@ -8,10 +8,26 @@ pub const NEG_ONE: u16 = 0xFFFE; // Negative one represented in one's complement
 pub const NEG_ZERO: u16 = 0xFFFF; // Negative zero in one's complement
 pub const ZERO_BIT16: u16 = 0x7FFF; // Mask to zero the bit 16
 // Commonly used addresses
-pub const ACC: ErasableAddress = 0;
-pub const L: ErasableAddress = 1;
-pub const Q: ErasableAddress = 2;
-pub const Z: ErasableAddress = 5;
+macro_rules! register {
+    ($name:ident, $value:literal) => {
+        pub const $name: ErasableAddress = $value;
+    };
+}
+register!(ACC, 0);
+register!(L, 1);
+register!(Q, 2);
+register!(Z, 5);
+register!(ZERO, 7);
+register!(PANT, 256);
+register!(BTNUP, 264);
+register!(BTNRGT, 265);
+register!(BTNDWN, 266);
+register!(BTNLFT, 267);
+register!(BTN1, 268);
+register!(BTN2, 269);
+register!(POTE, 270);
+
+
 
 // Denotes an AGC word
 pub type Word = u16;

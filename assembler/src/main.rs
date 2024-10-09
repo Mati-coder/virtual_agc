@@ -5,16 +5,18 @@ mod types;
 use types::*;
 
 fn main() {
-    const FILE_COUNT: usize = 2;
+    const FILE_COUNT: usize = 4;
     
     let files = [
         //fs::read_to_string("../programs/if.agc").unwrap(),
+        fs::read_to_string("../programs/blink.agc").unwrap(),
         fs::read_to_string("../programs/for.agc").unwrap(),
         fs::read_to_string("../programs/fin.agc").unwrap(),
+        fs::read_to_string("../programs/if.agc").unwrap(),
     ];
 
     let sections = [Section::None, Section::Config, Section::Code, Section::Data];
-    let mut contents: [FileContent; FILE_COUNT] = [FileContent::new(), FileContent::new()];
+    let mut contents: [FileContent; FILE_COUNT] = [FileContent::new(), FileContent::new(), FileContent::new(), FileContent::new()];
     let mut tables: Vec<UndefinedTable> = vec![];
 
     // Parse files
@@ -159,7 +161,7 @@ fn main() {
     let start_of_fixed = 2048; 
     let mut erasable = 271; // Start of RAM
 
-    let mut defined: Vec<DefinedSymbol> = vec![ACC, L, Q, Z, BB, ZERO, PANTALLA, BTNUP, BTNRGT, BTNDWN, BTNLFT, BTN1, BTN2, POTE];
+    let mut defined: Vec<DefinedSymbol> = vec![ACC, L, Q, Z, BB, ZERO, PANT, BTNUP, BTNRGT, BTNDWN, BTNLFT, BTN1, BTN2, POTE];
     let mut binary: Vec<u16> = vec![];
 
     let mut len_code_total = 0;

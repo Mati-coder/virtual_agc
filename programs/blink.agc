@@ -1,0 +1,48 @@
+.code
+BLINK:
+    CA ANCHOPANT
+    EXTEND
+    DIM ACC
+BUCLEB1:
+    TS I
+
+    CA FILACOMP
+
+    INDEX I
+    TS PANT
+
+    CCS I
+
+    TCF BUCLEB1
+
+DELAYB:
+    CA DELAY
+    EXTEND
+    DIM ACC
+BUCLED:
+    TS I
+    CCS I
+
+    TCF BUCLED
+
+    CA ANCHOPANT
+    EXTEND
+    DIM ACC
+BUCLEB2:
+    TS I
+
+    CS PANT
+
+    INDEX I
+    TS PANT
+
+    CCS I
+
+    TCF BUCLEB2
+
+    TCF DELAYB
+
+
+.data
+DELAY:
+    DEC 10

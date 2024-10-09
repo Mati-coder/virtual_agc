@@ -2,26 +2,26 @@
     VEC MAPA 8
 .code
 FOR:
-    CA ANCHOPANTALLA
+    CA ANCHOPANT
     EXTEND
     DIM ACC
-BUCLE:
+BUCLEF:
     TS I
 
     INDEX I
     CA MAPA
 
     INDEX I
-    TS PANTALLA
+    TS PANT
 
     CCS I
 
-    TCF BUCLE
+    TCF BUCLEF
 
     TCF FIN
 
 .data
-ANCHOPANTALLA:
+ANCHOPANT:
     DEC 8
 MAPA:
     DEC 253
