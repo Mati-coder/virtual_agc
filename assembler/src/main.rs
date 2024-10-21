@@ -5,18 +5,18 @@ mod types;
 use types::*;
 
 fn main() {
-    const FILE_COUNT: usize = 4;
+    const FILE_COUNT: usize = 2;
     
     let files = [
         //fs::read_to_string("../programs/if.agc").unwrap(),
         fs::read_to_string("../programs/blink.agc").unwrap(),
         fs::read_to_string("../programs/for.agc").unwrap(),
-        fs::read_to_string("../programs/fin.agc").unwrap(),
-        fs::read_to_string("../programs/if.agc").unwrap(),
+        //fs::read_to_string("../programs/fin.agc").unwrap(),
+        //fs::read_to_string("../programs/if.agc").unwrap(),
     ];
 
     let sections = [Section::None, Section::Config, Section::Code, Section::Data];
-    let mut contents: [FileContent; FILE_COUNT] = [FileContent::new(), FileContent::new(), FileContent::new(), FileContent::new()];
+    let mut contents: [FileContent; FILE_COUNT] = [FileContent::new(), FileContent::new()];
     let mut tables: Vec<UndefinedTable> = vec![];
 
     // Parse files

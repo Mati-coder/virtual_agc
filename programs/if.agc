@@ -17,7 +17,7 @@ NO:
 
 IMPRIMIR:
     TS PANTALLA
-    TCF FIN
+    RETURN
 
 .data
 LIMITE:

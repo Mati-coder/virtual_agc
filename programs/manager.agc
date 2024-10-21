@@ -1,0 +1,40 @@
+.config
+    VEC PROGS 4
+.code
+INICIO:
+    INDEX PRG
+    CA PROGS
+    TCF PANT
+
+    CA BTNRGT
+    BZF S1
+    INCR PRG
+S1:
+    CA BTNLFT
+    BZF S2
+    EXTEND
+    DIM PRG
+S2:
+    CS PRG
+    AD MAXPRG
+    BZMF S3
+    CA MAXPRG
+S3:
+    CA BTN1
+    BZF INICIO
+    INDEX PRG
+    TCF PDIR
+PDIR:
+    TC BLINK
+    TC PLAYER
+    TC FOR
+    TC IF
+
+.data
+MAXPRG:
+    DEC 3
+PROGS:
+    DEC 1
+    DEC 3
+    DEC 7
+    DEC 15

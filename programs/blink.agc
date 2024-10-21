@@ -40,9 +40,14 @@ BUCLEB2:
 
     TCF BUCLEB2
 
-    TCF DELAYB
+    CA BTN1
+    EXTEND
+    BZF DELAYB
+    TC Q
 
 
 .data
+FILACOMP:
+    DEC 255
 DELAY:
     DEC 10

@@ -18,7 +18,7 @@ BUCLEF:
 
     TCF BUCLEF
 
-    TCF FIN
+    TC Q
 
 .data
 ANCHOPANT:

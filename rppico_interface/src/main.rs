@@ -2,12 +2,18 @@
 #![no_main]
 
 use core::panic::PanicInfo;
+use core::slice::from_raw_parts;
+use agc_emulator::instructions::Instruction;
+use cortex_m::asm::delay;
+use cortex_m::register::control::read;
 use embedded_hal::delay::DelayNs;
 use embedded_hal::digital::OutputPin;
 use embedded_hal::digital::InputPin;
 use embedded_hal::digital::StatefulOutputPin;
 use embedded_hal::spi::SpiBus;
 use embedded_hal_0_2::adc::OneShot;
+use rp2040_hal::gpio::bank0::Gpio16;
+use rp2040_hal::gpio::bank0::Gpio6;
 use rp_pico::entry;
 use rp_pico::hal::prelude::*;
 use rp_pico::hal::pac;
@@ -23,12 +29,34 @@ fn panic_handler(_info: &PanicInfo) -> ! {
     loop {}
 }
 
+// Modes
+enum Modes {
+    MANUAL = 0,
+    AUTO = 1,
+    CONTINUO = 2,
+}
+
 // Addresses for led matrix control
 const DECODE: u16 = 0x900;
 const INTENSITY: u16 = 0xa00;
 const SCAN_LIMIT: u16 = 0xb00;
 const SHUTDOWN: u16 = 0xc00;
 const TEST: u16 = 0xf00;
+
+// Addresses of peripherals
+macro_rules! register {
+    ($name:ident, $value:literal) => {
+        const $name: ErasableAddress = $value;
+    };
+}
+register!(PANT, 256);
+register!(BTNUP, 264);
+register!(BTNRGT, 265);
+register!(BTNDWN, 266);
+register!(BTNLFT, 267);
+register!(BTN1, 268);
+register!(BTN2, 269);
+register!(POTE, 270);
 
 #[entry]
 fn entry() -> ! {
@@ -49,6 +77,7 @@ fn entry() -> ! {
     let sio = hal::Sio::new(p.SIO);
     let pins = rp_pico::Pins::new(p.IO_BANK0, p.PADS_BANK0, sio.gpio_bank0, &mut p.RESETS);
     let mut timer = hal::Timer::new(p.TIMER, &mut p.RESETS, &clocks);
+    
 
     // Internal LED
     let mut led = pins.led.into_push_pull_output();
@@ -59,19 +88,20 @@ fn entry() -> ! {
             let mut $name = pins.$pin.into_pull_down_input();
         };
     }
-    button!(btnup, gpio8);
-    button!(btnrgt, gpio9);
-    button!(btndwn, gpio10);
-    button!(btnlft, gpio11);
-    button!(btn1, gpio13);
-    button!(btn2, gpio14);
-    button!(btncfg, gpio15);
-    button!(btnclk, gpio16);
+    button!(btnup, gpio13);
+    button!(btnrgt, gpio12);
+    button!(btndwn, gpio11);
+    button!(btnlft, gpio10);
+    button!(btn1, gpio9);
+    button!(btn2, gpio8);
+    button!(btncfg, gpio7);
+    button!(btnclk, gpio6);
     
     // LED Matrix control variables and setup
+    const screen_mask: u16 = 0x00FF;
     let spi_pins = (pins.gpio3.into_function(), pins.gpio2.into_function());
     let mut spi: hal::Spi<_, _, _, 16> = hal::Spi::new(p.SPI0, spi_pins).init(&mut p.RESETS, clocks.peripheral_clock.freq(), 8.MHz(), embedded_hal::spi::MODE_0);
-    let mut cs = pins.gpio7.into_push_pull_output();
+    let mut cs = pins.gpio5.into_push_pull_output();
     macro_rules! sendto_matrix {
         ($data: expr) => {
             cs.set_high();
@@ -86,7 +116,11 @@ fn entry() -> ! {
     sendto_matrix!(TEST + 0); // NO TEST
     sendto_matrix!(SCAN_LIMIT + 7); // ALL DIGITS
     sendto_matrix!(DECODE + 0); // NO DECODE
-    sendto_matrix!(INTENSITY + 7); // ABOUT HALF INTENSITY
+    sendto_matrix!(INTENSITY + 1); // ABOUT HALF INTENSITY
+
+    for i in 1..=8 {
+        sendto_matrix!(i * 16 * 16 + 0);
+    } 
 
     // LCD control variables and setup
     let mut i2c = hal::I2C::i2c0(
@@ -97,15 +131,16 @@ fn entry() -> ! {
         &mut p.RESETS,
         &clocks.system_clock,
     );
-    const LCD_ADDRESS: u8 = 0x3F;
-    let mut lcd = lcd_lcm1602_i2c::sync_lcd::Lcd::new(&mut i2c, &mut timer)
+    const LCD_ADDRESS: u8 = 0x27;
+    let mut lcd_timer = timer.clone();
+    let mut lcd = lcd_lcm1602_i2c::sync_lcd::Lcd::new(&mut i2c, &mut lcd_timer)
         .with_address(LCD_ADDRESS)
         .with_cursor_on(false) // no visible cursor
         .with_rows(2) // two rows
         .init().unwrap();
-
-    lcd.set_cursor(1, 2);
-
+    
+    lcd.set_cursor(0, 0);
+  
     // Potentiometer control variables
     let mut adc = hal::Adc::new(p.ADC, &mut p.RESETS);
     let mut potentiometer = hal::adc::AdcPin::new(pins.gpio26).unwrap();
@@ -113,9 +148,70 @@ fn entry() -> ! {
     // Ejemplo lectura del pote
     let reading: u16 = adc.read(&mut potentiometer).unwrap();
 
+    // Run a cycle
+    //execute(MEMORY.read(MEMORY.read(Z)));
+    
+    // Get ins and address name
+    //let Instruction(name, addr) = decode(MEMORY.read(Z));
+    //let addr_name = MEMORY.get_address_name(addr);
+
+    // Read or Write
+    //MEMORY.read(k);
+    //MEMORY.write(k, val);
+    
+    // Reset
+    // hal::reset();
+    let mut mode: Modes = MANUAL;
+    let mut pulsed = false;
     loop {
+        lcd.set_cursor(0, 0);
+        btnclk.is_high().unwrap();
+        let Instruction(name, addr) = decode(MEMORY.read(MEMORY.read(Z)));
+        let addr_name = MEMORY.get_address_name(addr);
+        lcd.write_str("M ");
+        lcd.write_str(name);
+        lcd.write_str(" "); 
+        lcd.write_str(addr_name);
         
-    }
+        macro_rules! update_btn {
+            ($name:ident, $addr:expr) => {
+                if $name.is_high().unwrap() {
+                    MEMORY.write($addr, 1);
+                } else {
+                    MEMORY.write($addr, 0);
+                }
+            };
+        }
+        update_btn!(btnup, BTNUP);
+        update_btn!(btndwn, BTNDWN);
+        update_btn!(btnlft, BTNLFT);
+        update_btn!(btnrgt, BTNRGT);
+        update_btn!(btn1, BTN1);
+        update_btn!(btn2, BTN2);
+        
+        for i in 0..8 {   
+           sendto_matrix!(16*16*(8-i) + (MEMORY.read(PANT+i) & screen_mask));
+        }
+        
+        match mode {
+            Modes::MANUAL => {
+                if btnclk.is_high().unwrap(){
+                    execute(MEMORY.read(MEMORY.read(Z)));
+                    pulsed = true;
+                    lcd.clear();
+                }
+                if btnclk.is_low().unwrap() {
+                    pulsed = false;
+                }
+            },
+            Modes::AUTO => {
+
+            },
+            Modes::CONTINUO => {
+
+            },
+        }
+    } 
 }
 
 

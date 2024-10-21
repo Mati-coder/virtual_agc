@@ -1,0 +1,17 @@
+.code
+LABERINTO:
+    EXTEND
+    QXCH QBACK
+
+	CS ZERO
+
+    INDEX X
+    MASK MASCARAS
+
+    TC MOVIMIENTO
+
+
+    
+
+
+    TCF LABERINTO

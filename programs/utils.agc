@@ -1,83 +1,56 @@
-.config
-    VEC MASCARAS 8
 .code
-PLAYER:
-	CS ZERO
-
-    INDEX X
-    MASK MASCARAS
-
-    INDEX Y
-    TS PANT
-
+MOVIMIENTO:
     CCS BTNUP
 
     INCR Y
 
     CA BTNDWN
-    BZF A1
+    BZF B1
     EXTEND
     DIM Y
-A1:
+B1:
     CCS BTNRGT
 
     INCR X
 
     CA BTNLFT
-    BZF A2
+    BZF B2
     EXTEND
     DIM X
-A2:
-    CCS BTN2
-
-    RETURN
-    
+B2:
     CA X
     EXTEND
     SU MAXXY
-    BZMF A3
+    BZMF B3
     CA MAX
     TS X
-A3:
+B3:
     CA Y
     EXTEND
     SU MAXXY
-    BZMF A4
+    BZMF B4
     CA MAX
     TS Y
-A4:
+B4:
     CA X
     EXTEND
     AUG X
-    BZMF A5
+    BZMF B5
     EXTEND
     DIM X
-A5:
+B5:
     CA ZERO
     TS X
 
     CA Y
     EXTEND
     AUG Y
-    BZMF A6
+    BZMF B6
     EXTEND
     DIM Y
-A6:
+B6:
     CA ZERO
     TS Y
 
-    TCF PLAYER
-
-.data
-MAXXY:
-    DEC 7
-MASCARAS:
-    DEC 1
-    DEC 2
-    DEC 4
-    DEC 8
-    DEC 16
-    DEC 32
-    DEC 64
-    DEC 128
+    RETURN
 
