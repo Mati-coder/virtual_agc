@@ -7,7 +7,7 @@ IF:
     COM
 
     EXTEND
-    BZMF FOR
+    BZMF NO
 
     CS ZERO
     TCF IMPRIMIR
@@ -16,8 +16,17 @@ NO:
     CA ZERO
 
 IMPRIMIR:
-    TS PANTALLA
-    RETURN
+    TS PANT
+    
+    CA CICLOS2
+    TS CICLOS
+    TC DELAY
+
+    CA BTN1
+    EXTEND
+    BZMF IF
+    TC LIMPPANT
+    TCF INICIO
 
 .data
 LIMITE:

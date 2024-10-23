@@ -100,6 +100,7 @@ pub fn decode(operation: &str) -> u16 {
         "BZMF"=>   0b110000000000000,
         "COM"=>    0b100000000000000,
         "EXTEND"=> 6,
+        "RETURN"=> 2,
         _ => panic!("INVALID")
     }
 }

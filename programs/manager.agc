@@ -1,40 +1,64 @@
 .config
-    VEC PROGS 4
+    VEC PROGS 5
 .code
 INICIO:
     INDEX PRG
     CA PROGS
-    TCF PANT
+    TS PANT
+
+    CA CICLOS1
+    TS CICLOS
+    TC DELAY
 
     CA BTNRGT
+    EXTEND
     BZF S1
     INCR PRG
 S1:
     CA BTNLFT
+    EXTEND
     BZF S2
     EXTEND
     DIM PRG
 S2:
     CS PRG
     AD MAXPRG
+    COM
+    EXTEND
     BZMF S3
     CA MAXPRG
+    TS PRG
 S3:
+    CA PRG
+    EXTEND
+    BZMF S4
+    TCF S5
+S4:
+    CA ZERO
+    TS PRG
+S5:
     CA BTN1
+    EXTEND
     BZF INICIO
     INDEX PRG
     TCF PDIR
+    
+
 PDIR:
     TC BLINK
-    TC PLAYER
     TC FOR
     TC IF
+    TC PLAYER
+    TC LABERINTO
 
 .data
+CICLOS1:
+    DEC 150
 MAXPRG:
-    DEC 3
+    DEC 4
 PROGS:
     DEC 1
     DEC 3
     DEC 7
     DEC 15
+    DEC 31

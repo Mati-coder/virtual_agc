@@ -2,76 +2,48 @@
     VEC MASCARAS 8
 .code
 PLAYER:
+    CA MASC
+    TS PANT
+    CA CICLOS1
+    TS CICLOS
+    TC DELAY
+    CA ZERO
+    TS X
+    TS Y
+PLAYERB:
 	CS ZERO
 
     INDEX X
-    MASK MASCARAS
+    MASK MASC
 
     INDEX Y
     TS PANT
 
-    CCS BTNUP
-
-    INCR Y
-
-    CA BTNDWN
-    BZF A1
-    EXTEND
-    DIM Y
-A1:
-    CCS BTNRGT
-
-    INCR X
-
-    CA BTNLFT
-    BZF A2
-    EXTEND
-    DIM X
-A2:
-    CCS BTN2
-
-    RETURN
-    
-    CA X
-    EXTEND
-    SU MAXXY
-    BZMF A3
-    CA MAX
-    TS X
-A3:
     CA Y
-    EXTEND
-    SU MAXXY
-    BZMF A4
-    CA MAX
-    TS Y
-A4:
-    CA X
-    EXTEND
-    AUG X
-    BZMF A5
-    EXTEND
-    DIM X
-A5:
-    CA ZERO
-    TS X
+    TS PREVY
 
-    CA Y
-    EXTEND
-    AUG Y
-    BZMF A6
-    EXTEND
-    DIM Y
-A6:
-    CA ZERO
-    TS Y
+    TC MOVIMIENTO
 
-    TCF PLAYER
+    CA CICLOS3
+    TS CICLOS
+    TC DELAY
+
+    CA ZERO
+    INDEX PREVY
+    TS PANT
+
+    CA BTN1
+    EXTEND
+    BZMF C1
+    TC LIMPPANT
+    TCF INICIO
+C1:
+    TCF PLAYERB
 
 .data
-MAXXY:
-    DEC 7
-MASCARAS:
+CICLOS3:
+    DEC 50
+MASC:
     DEC 1
     DEC 2
     DEC 4
@@ -80,4 +52,3 @@ MASCARAS:
     DEC 32
     DEC 64
     DEC 128
-

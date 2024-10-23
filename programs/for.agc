@@ -3,8 +3,6 @@
 .code
 FOR:
     CA ANCHOPANT
-    EXTEND
-    DIM ACC
 BUCLEF:
     TS I
 
@@ -18,11 +16,16 @@ BUCLEF:
 
     TCF BUCLEF
 
-    TC Q
+    CA CICLOS1
+    TS CICLOS
+    TC DELAY
+    CA BTN1
+    EXTEND
+    BZMF FOR
+    TC LIMPPANT
+    TCF INICIO
 
 .data
-ANCHOPANT:
-    DEC 8
 MAPA:
     DEC 253
     DEC 197

@@ -1,8 +1,6 @@
 .code
 BLINK:
     CA ANCHOPANT
-    EXTEND
-    DIM ACC
 BUCLEB1:
     TS I
 
@@ -16,18 +14,11 @@ BUCLEB1:
     TCF BUCLEB1
 
 DELAYB:
-    CA DELAY
-    EXTEND
-    DIM ACC
-BUCLED:
-    TS I
-    CCS I
-
-    TCF BUCLED
+    CA CICLOS2
+    TS CICLOS
+    TC DELAY
 
     CA ANCHOPANT
-    EXTEND
-    DIM ACC
 BUCLEB2:
     TS I
 
@@ -43,11 +34,12 @@ BUCLEB2:
     CA BTN1
     EXTEND
     BZF DELAYB
-    TC Q
+    TC LIMPPANT
+    TCF INICIO
 
 
 .data
 FILACOMP:
     DEC 255
-DELAY:
-    DEC 10
+CICLOS2:
+    DEC 200

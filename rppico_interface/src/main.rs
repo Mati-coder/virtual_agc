@@ -34,6 +34,34 @@ enum Modes {
     MANUAL = 0,
     AUTO = 1,
     CONTINUO = 2,
+    RESET = 3,
+}
+impl From<u8> for Modes {
+    fn from(value: u8) -> Self {
+        match value % 4 {
+            0 => Modes::MANUAL,
+            1 => Modes::AUTO,
+            2 => Modes::CONTINUO,
+            3 => Modes::RESET,
+            _ => unreachable!()
+        }
+    }
+}
+
+fn char(value: u16) -> &'static str {
+    match value % 10{
+        0 => "0",
+        1 => "1",
+        2 => "2",
+        3 => "3",
+        4 => "4",
+        5 => "5",
+        6 => "6",
+        7 => "7",
+        8 => "8",
+        9 => "9",
+        _ => unreachable!()
+    }
 }
 
 // Addresses for led matrix control
@@ -161,18 +189,12 @@ fn entry() -> ! {
     
     // Reset
     // hal::reset();
-    let mut mode: Modes = MANUAL;
-    let mut pulsed = false;
+    let mut mode: Modes = Modes::MANUAL;
+    let mut pulsedclk: bool = false;
+    let mut pulsedcfg: bool = false;
+    let mut imp: bool = true;
+    let mut executing: bool = false;
     loop {
-        lcd.set_cursor(0, 0);
-        btnclk.is_high().unwrap();
-        let Instruction(name, addr) = decode(MEMORY.read(MEMORY.read(Z)));
-        let addr_name = MEMORY.get_address_name(addr);
-        lcd.write_str("M ");
-        lcd.write_str(name);
-        lcd.write_str(" "); 
-        lcd.write_str(addr_name);
-        
         macro_rules! update_btn {
             ($name:ident, $addr:expr) => {
                 if $name.is_high().unwrap() {
@@ -189,26 +211,103 @@ fn entry() -> ! {
         update_btn!(btn1, BTN1);
         update_btn!(btn2, BTN2);
         
+        macro_rules! print_lcd {
+            ($mode:literal) => {
+                let Instruction(name, addr) = decode(MEMORY.read(MEMORY.read(Z)));
+                let addr_name = MEMORY.get_address_name(addr);
+                lcd.clear();
+                lcd.write_str($mode);
+                lcd.write_str(" ");
+                lcd.write_str(name);
+                lcd.write_str(" "); 
+                lcd.write_str(addr_name);
+            };
+        }
         for i in 0..8 {   
            sendto_matrix!(16*16*(8-i) + (MEMORY.read(PANT+i) & screen_mask));
         }
         
+        if btncfg.is_high().unwrap() && !pulsedcfg {
+            mode = (mode as u8 + 1).into();
+            timer.delay_ms(100);
+            imp = true;
+            pulsedcfg = true;
+        }
+        if btncfg.is_low().unwrap() {
+            pulsedcfg = false;
+        }
+        
+        
+        
         match mode {
             Modes::MANUAL => {
-                if btnclk.is_high().unwrap(){
+                if imp == true {
+                    print_lcd!("M");
+                    imp = false;
+                }
+                if btnclk.is_high().unwrap() && !pulsedclk {
                     execute(MEMORY.read(MEMORY.read(Z)));
-                    pulsed = true;
-                    lcd.clear();
+                    lcd.set_cursor(0, 0);
+                    btnclk.is_high().unwrap();
+                    print_lcd!("M");
+                    lcd.set_cursor(1, 0);
+                    lcd.write_str(char(MEMORY.read(272)/10000));
+                    lcd.write_str(char(MEMORY.read(272)/1000));
+                    lcd.write_str(char(MEMORY.read(272)/100));
+                    lcd.write_str(char(MEMORY.read(272)/10));
+                    lcd.write_str(char(MEMORY.read(272)));
+                    pulsedclk = true;
+                    timer.delay_ms(200);
                 }
                 if btnclk.is_low().unwrap() {
-                    pulsed = false;
+                    pulsedclk = false;
                 }
+                
             },
             Modes::AUTO => {
-
+                if imp == true {
+                    print_lcd!("A");
+                    imp = false;
+                }
+                if btnclk.is_high().unwrap(){
+                    execute(MEMORY.read(MEMORY.read(Z)));
+                    lcd.set_cursor(0, 0);
+                    btnclk.is_high().unwrap();
+                    print_lcd!("A");
+                    timer.delay_ms(500);
+                }
             },
             Modes::CONTINUO => {
-
+                if imp == true {
+                    lcd.clear();
+                    lcd.write_str("    CONTINUO    ");
+                    imp = false;
+                }
+                if btnclk.is_high().unwrap() && !pulsedclk{
+                    executing = !executing;
+                    pulsedclk = true;
+                }
+                if btnclk.is_low().unwrap() {
+                    pulsedclk = false;
+                }
+                if executing {
+                    execute(MEMORY.read(MEMORY.read(Z)));
+                }
+                
+            },
+            Modes::RESET => {
+                if imp == true {
+                    lcd.clear();
+                    lcd.write_str("RESET");
+                    imp = false;
+                }
+                if btnclk.is_high().unwrap() && !pulsedclk{
+                    hal::reset();
+                }
+                if btnclk.is_low().unwrap() {
+                    pulsedclk = false;
+                }
+                
             },
         }
     } 
