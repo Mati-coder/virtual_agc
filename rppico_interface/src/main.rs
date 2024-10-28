@@ -85,6 +85,9 @@ register!(BTNLFT, 267);
 register!(BTN1, 268);
 register!(BTN2, 269);
 register!(POTE, 270);
+register!(CORTO, 271);
+register!(MEDIO, 272);
+register!(LARGO, 273);
 
 #[entry]
 fn entry() -> ! {
@@ -214,7 +217,7 @@ fn entry() -> ! {
         macro_rules! print_lcd {
             ($mode:literal) => {
                 let Instruction(name, addr) = decode(MEMORY.read(MEMORY.read(Z)));
-                let addr_name = MEMORY.get_address_name(addr);
+                let addr_name = MEMORY.get_address_name(addr.unwrap_or(513));
                 lcd.clear();
                 lcd.write_str($mode);
                 lcd.write_str(" ");
@@ -236,12 +239,13 @@ fn entry() -> ! {
         if btncfg.is_low().unwrap() {
             pulsedcfg = false;
         }
-        
-        
-        
+
         match mode {
             Modes::MANUAL => {
-                if imp == true {
+                if imp {
+                    MEMORY.write(CORTO, 0);
+                    MEMORY.write(MEDIO, 0);
+                    MEMORY.write(LARGO, 3);
                     print_lcd!("M");
                     imp = false;
                 }
@@ -262,10 +266,12 @@ fn entry() -> ! {
                 if btnclk.is_low().unwrap() {
                     pulsedclk = false;
                 }
-                
             },
             Modes::AUTO => {
-                if imp == true {
+                if imp {
+                    MEMORY.write(CORTO, 0);
+                    MEMORY.write(MEDIO, 0);
+                    MEMORY.write(LARGO, 3);
                     print_lcd!("A");
                     imp = false;
                 }
@@ -278,7 +284,10 @@ fn entry() -> ! {
                 }
             },
             Modes::CONTINUO => {
-                if imp == true {
+                if imp {
+                    MEMORY.write(CORTO, 50);
+                    MEMORY.write(MEDIO, 125);
+                    MEMORY.write(LARGO, 200);
                     lcd.clear();
                     lcd.write_str("    CONTINUO    ");
                     imp = false;
@@ -296,7 +305,7 @@ fn entry() -> ! {
                 
             },
             Modes::RESET => {
-                if imp == true {
+                if imp {
                     lcd.clear();
                     lcd.write_str("RESET");
                     imp = false;

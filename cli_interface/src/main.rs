@@ -49,6 +49,9 @@ fn main() {
     let col = 6;
     let mut show:bool = true;
     let mut cycles_executed = 0;
+    MEMORY.write(271, 0);
+    MEMORY.write(272, 0);
+    MEMORY.write(273, 3);
     loop {
         let command = get_command();
         match command {
@@ -60,17 +63,7 @@ fn main() {
                     execute(MEMORY.read(MEMORY.read(Z)));
                     cycles_executed += 1;
                     if show {
-                        let name = MEMORY.get_address_name(addr);
-                        if name == "" {
-                            if n % col == col-1 {
-                                println!("|{:>3}| {:>6} {:<10} ", cycles_executed, ins, addr);
-                            } else {
-                                print!("|{:>3}| {:>6} {:<10} ", cycles_executed, ins, addr);
-                            }
-
-                            continue;
-                        }
-
+                        let name = MEMORY.get_address_name(addr.unwrap_or(513));
                         if n % col == col-1 {
                             println!("|{:>3}| {:>6} {:<10} ", cycles_executed, ins, name);
                         } else {

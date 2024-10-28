@@ -1,6 +1,7 @@
 .code
 BLINK:
-    CA ANCHOPANT
+    CA ANCHOPANT 
+# Bucle que enciende toda la pantalla
 BUCLEB1:
     TS I
 
@@ -14,15 +15,18 @@ BUCLEB1:
     TCF BUCLEB1
 
 DELAYB:
-    CA CICLOS2
+    # Delay
+    CA MEDIO
     TS CICLOS
     TC DELAY
 
+# Bucle de actualizacion de la pantalla
     CA ANCHOPANT
 BUCLEB2:
     TS I
-
-    CS PANT
+    # Carga el negativo del valor de la primer fila de la pantalla
+    # Si esta esta encendida, entonces la apagará, y viceversa
+    CS PANT 
 
     INDEX I
     TS PANT
@@ -31,6 +35,7 @@ BUCLEB2:
 
     TCF BUCLEB2
 
+    # Chequea si debe salir del programa
     CA BTN1
     EXTEND
     BZF DELAYB
@@ -39,7 +44,5 @@ BUCLEB2:
 
 
 .data
-FILACOMP:
+FILACOMP: # El valor de una fila completamene iluminada
     DEC 255
-CICLOS2:
-    DEC 200

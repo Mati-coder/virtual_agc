@@ -69,6 +69,12 @@ pub const BTNLFT: DefinedSymbol = DefinedSymbol::new("BTNLFT", crate::SymbolType
 pub const BTN1: DefinedSymbol = DefinedSymbol::new("BTN1", crate::SymbolType::Variable, 268);
 pub const BTN2: DefinedSymbol = DefinedSymbol::new("BTN2", crate::SymbolType::Variable, 269);
 pub const POTE: DefinedSymbol = DefinedSymbol::new("POTE", crate::SymbolType::Variable, 270);
+pub const CORTO: DefinedSymbol = DefinedSymbol::new("CORTO", crate::SymbolType::Variable, 271);
+pub const MEDIO: DefinedSymbol = DefinedSymbol::new("MEDIO", crate::SymbolType::Variable, 272);
+pub const LARGO: DefinedSymbol = DefinedSymbol::new("LARGO", crate::SymbolType::Variable, 273);
+
+pub const RAM_START: u16 = 274;
+pub const FIXED_START: usize = 2048;
 
 pub fn decode(operation: &str) -> u16 {
     match operation {

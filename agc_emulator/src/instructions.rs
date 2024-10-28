@@ -1,6 +1,6 @@
 use crate::memory::*;
 
-pub struct Instruction(pub &'static str, pub Address);
+pub struct Instruction(pub &'static str, pub Option<Address>);
 
 // Pure instructions
 pub const AD: u16 =     0b110000000000000;
@@ -109,7 +109,7 @@ pub(crate) fn bit16(n: Word) -> u16 {
 }
 
 pub fn decode(ins: Word) -> Instruction {
-    let ins = ins + MEMORY.get_index();
+    let ins = add_modified(ins, MEMORY.get_index());
 
     let opcode = (ins & 0x7000) >> 12; // bits 15-13
     let qc = (ins & 0x0C00) >> 10; // bits 12-11
@@ -119,12 +119,12 @@ pub fn decode(ins: Word) -> Instruction {
 
     macro_rules! addr {
         ($name: literal) => {
-            Instruction($name, address)
+            Instruction($name, Some(address))
         };
     }
     macro_rules! eraddr {
         ($name: literal) => {
-            Instruction($name, er_address)
+            Instruction($name, Some(er_address))
         };
     }
 
@@ -133,11 +133,11 @@ pub fn decode(ins: Word) -> Instruction {
         // Basic instructions
         match opcode {
             0 => match address {
-                2 => Instruction("RETURN", 0), // RETURN
-                3 => Instruction("RELINT", 0), // RELINT
-                4 => Instruction("INHINT", 0), // INHINT
-                6 => Instruction("EXTEND", 0), // EXTEND
-                _ => addr!("TCF"),
+                2 => Instruction("RETURN", None), // RETURN
+                3 => Instruction("RELINT", None), // RELINT
+                4 => Instruction("INHINT", None), // INHINT
+                6 => Instruction("EXTEND", None), // EXTEND
+                _ => addr!("TC"),
             }
             1 => match qc {
                 0 => eraddr!("CCS"),
@@ -152,7 +152,10 @@ pub fn decode(ins: Word) -> Instruction {
                 _ => unreachable!()
             }
             3 => addr!("CA"),
-            4 => addr!("CS"),
+            4 => match address {
+                    0 => Instruction("COM", None),
+                    _ => addr!("CS"),
+                },
             5 => match qc {
                 0 => if address == 15 {
                     unimplemented!() // should be RESUME
@@ -199,7 +202,7 @@ pub fn decode(ins: Word) -> Instruction {
 
 // EXTEND AND INDEX HAVE PROBLEMS
 pub fn execute(ins: Word) {
-    let ins = ins + MEMORY.get_index();
+    let ins = add_modified(ins, MEMORY.get_index());
 
     let opcode = (ins & 0x7000) >> 12; // bits 15-13
     let qc = (ins & 0x0C00) >> 10; // bits 12-11
@@ -286,7 +289,7 @@ pub fn execute(ins: Word) {
 
 // How the AGC's ALU added
 // It represents numbers in 15 bit one's complement and adds a modification to the sign bit
-// For non-overflow conditions this function returns a value who's bit 15 and 16 are equal
+// For non-overflow conditions this function returns a value whose bits 15 and 16 are equal
 pub(crate) fn add_modified(a: u16, b: u16) -> u16 {
     // u32 is used because sometimes we overflow the 16th bit
     // we set bit 16 to zero, it was the only way I found to detect overflows of the 15th bit, needed

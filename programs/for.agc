@@ -1,7 +1,8 @@
 .config
     VEC MAPA 8
 .code
-FOR:
+# Ejemplo de un bucle for simple. Imprime una imagen en la pantalla (un laberinto)
+FOR: 
     CA ANCHOPANT
 BUCLEF:
     TS I
@@ -16,13 +17,17 @@ BUCLEF:
 
     TCF BUCLEF
 
-    CA CICLOS1
+    # Pequeño delay para evitar volver inmediatamente a la pantalla de selección
+    CA MEDIO
     TS CICLOS
     TC DELAY
+
+    TC LIMPPANT
+
+    # Chequea si debe salir del programa
     CA BTN1
     EXTEND
     BZMF FOR
-    TC LIMPPANT
     TCF INICIO
 
 .data

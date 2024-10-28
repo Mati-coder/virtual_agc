@@ -1,10 +1,14 @@
 .code
+# Subrutina que controla el movimiento
+# Los botones arriba y abajo disminuyen y aumentan Y, respectivamente
+# Los botones derecha e izquierda aumentan y disminuyen X, respectivamente
+# Al final se chequea si X o Y superaron su valor maximo. Si es asi, se restablecen a MAXXY
 MOVIMIENTO:
-    CCS BTNUP
+    CCS BTNDWN
 
     INCR Y
 
-    CA BTNDWN
+    CA BTNUP
     EXTEND
     BZF B1
     EXTEND
@@ -36,24 +40,9 @@ B3:
     CA MAXXY
     TS Y
 B4:
-    CA X
-    EXTEND
-    BZMF B5
-    TCF B6
-B5:
-    CA ZERO
-    TS X
-B6:
-    CA Y
-    EXTEND
-    BZMF B7
-    TCF B8
-B7:
-    CA ZERO
-    TS Y
-B8:
     RETURN
 
+# Subrutina que ejecuta CICLOS bucles para perder tiempo
 DELAY:
     CA CICLOS
 DELAYL:
@@ -64,6 +53,7 @@ DELAYL:
 
     RETURN
 
+# Subrutina que carga un 0 en todas las filas de la pantalla
 LIMPPANT:
     CA ANCHOPANT
 BUCLELP:
@@ -72,6 +62,7 @@ BUCLELP:
     CA ZERO
     INDEX I
     TS PANT
+
     CCS I
 
     TCF BUCLELP
@@ -79,8 +70,8 @@ BUCLELP:
     RETURN
 
 .data
-ANCHOPANT:
+ANCHOPANT: # Ancho de la pantalla - 1
     DEC 7
-MAXXY:
+MAXXY: # Valor maximo de X e Y
     DEC 7
 
