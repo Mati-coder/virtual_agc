@@ -2,6 +2,7 @@
 IF:
     CS LIMITE
     AD POTE
+    # Las dos lineas anteriores calculan [POTE - LIMITE], que solo es positivo si POTE > LIMITE 
 
     EXTEND
     BZMF NOSUPERA
@@ -16,7 +17,7 @@ IMPRIMIR:
     TS PANT
     
     # Pequeño delay para evitar volver inmediatamente a la pantalla de selección
-    CA CICLOS2
+    CA MEDIO
     TS CICLOS
     TC DELAY
 

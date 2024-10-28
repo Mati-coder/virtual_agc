@@ -8,7 +8,7 @@ INICIO:
     TS PANT
 
 # Delay
-    CA CORTO
+    CA MEDIO
     TS CICLOS
     TC DELAY
 

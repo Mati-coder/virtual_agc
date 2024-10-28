@@ -163,7 +163,7 @@ fn main() {
     let start_of_fixed = FIXED_START; 
     let mut erasable = RAM_START; // Start of RAM
 
-    let mut defined: Vec<DefinedSymbol> = vec![ACC, L, Q, Z, BB, ZERO, PANT, BTNUP, BTNRGT, BTNDWN, BTNLFT, BTN1, BTN2, POTE];
+    let mut defined: Vec<DefinedSymbol> = vec![ACC, L, Q, Z, BB, ZERO, PANT, BTNUP, BTNRGT, BTNDWN, BTNLFT, BTN1, BTN2, POTE, CORTO, MEDIO, LARGO];
     let mut binary: Vec<u16> = vec![];
 
     let mut len_code_total = 0;
