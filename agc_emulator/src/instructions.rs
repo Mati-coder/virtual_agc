@@ -52,7 +52,7 @@ pub const ZQ: u16 =     0b001001000000111;
 
 // Corrects the overflow of a value (flips bit 15) if it has one, else returns the value
 pub(crate) fn correct(n: u16) -> u16 {
-    let sign_bits = n >> 15; // bits 16 and 15
+    let sign_bits = n >> 14; // bits 16 and 15
     match sign_bits {
         0b00 | 0b11 => return n,
         // overflow
@@ -481,6 +481,10 @@ pub(crate) fn dcs(k: Address) {
 // Diminish
 pub(crate) fn dim(k: ErasableAddress) {
     let n = read_16(k);
+    if n == 0 || n == 32768+32767 { // n equals +-0 
+        return
+    }
+
     if bit16(n) == 0 {
         MEMORY.write(k, add_modified(n, NEG_ONE));
     } else {
@@ -519,8 +523,8 @@ pub(crate) fn mask(k: Address) {
         MEMORY.write(ACC, acc & MEMORY.read(k));
     } else {
         acc = correct(acc); // correct overflow
-        acc = ( (acc << 1) & (MEMORY.read(k) << 1) ) >> 1; // AND components (ignoring bit 16)
-        acc += (acc & 0b0100000000000000) << 1; // copy bit 15 into bit 16
+        acc = (acc & 0x7FFF) & (MEMORY.read(k) & 0x7FFF); // AND components (ignoring bit 16)
+        acc = sign_extend(acc);
         MEMORY.write(ACC, acc);
     }
 }

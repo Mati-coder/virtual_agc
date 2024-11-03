@@ -255,11 +255,18 @@ fn entry() -> ! {
                     btnclk.is_high().unwrap();
                     print_lcd!("M");
                     lcd.set_cursor(1, 0);
-                    lcd.write_str(char(MEMORY.read(272)/10000));
-                    lcd.write_str(char(MEMORY.read(272)/1000));
-                    lcd.write_str(char(MEMORY.read(272)/100));
-                    lcd.write_str(char(MEMORY.read(272)/10));
-                    lcd.write_str(char(MEMORY.read(272)));
+                    lcd.write_str(char(MEMORY.read(0)/10000));
+                    lcd.write_str(char(MEMORY.read(0)/1000));
+                    lcd.write_str(char(MEMORY.read(0)/100));
+                    lcd.write_str(char(MEMORY.read(0)/10));
+                    lcd.write_str(char(MEMORY.read(0)));
+                    lcd.write_str(" ");
+                    lcd.write_str(char(MEMORY.read(283)/10000));
+                    lcd.write_str(char(MEMORY.read(283)/1000));
+                    lcd.write_str(char(MEMORY.read(283)/100));
+                    lcd.write_str(char(MEMORY.read(283)/10));
+                    lcd.write_str(char(MEMORY.read(283)));
+
                     pulsedclk = true;
                     timer.delay_ms(200);
                 }

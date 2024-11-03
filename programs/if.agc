@@ -2,6 +2,7 @@
 IF:
     CS LIMITE
     AD POTE
+    # Las dos lineas anteriores calculan [POTE - LIMITE], que solo es positivo si POTE > LIMITE 
 
     EXTEND
     BZMF NOSUPERA

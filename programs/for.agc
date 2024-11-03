@@ -18,7 +18,7 @@ BUCLEF:
     TCF BUCLEF
 
     # Pequeño delay para evitar volver inmediatamente a la pantalla de selección
-    CA MEDIO
+    CA LARGO
     TS CICLOS
     TC DELAY
 
