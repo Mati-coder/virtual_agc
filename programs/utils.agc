@@ -28,7 +28,7 @@ B2:
     AD MAXXY
     COM
     EXTEND
-    BZMF B3
+    BZF B3
     CA MAXXY
     TS X
 B3:
@@ -36,7 +36,7 @@ B3:
     AD MAXXY
     COM
     EXTEND
-    BZMF B4
+    BZF B4
     CA MAXXY
     TS Y
 B4:

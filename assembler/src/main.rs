@@ -5,7 +5,7 @@ mod types;
 use types::*;
 
 fn main() {
-    const FILE_COUNT: usize = 7;
+    const FILE_COUNT: usize = 8;
     
     let files = [
         fs::read_to_string("../programs/manager.agc").unwrap(),
@@ -14,11 +14,12 @@ fn main() {
         fs::read_to_string("../programs/if.agc").unwrap(),
         fs::read_to_string("../programs/player.agc").unwrap(),
         fs::read_to_string("../programs/laberinto.agc").unwrap(),
+        fs::read_to_string("../programs/pong.agc").unwrap(),
         fs::read_to_string("../programs/utils.agc").unwrap(),
     ];
 
     let sections = [Section::None, Section::Config, Section::Code, Section::Data];
-    let mut contents: [FileContent; FILE_COUNT] = [FileContent::new(), FileContent::new(), FileContent::new(), FileContent::new(), FileContent::new(), FileContent::new(), FileContent::new()];
+    let mut contents: [FileContent; FILE_COUNT] = [FileContent::new(), FileContent::new(), FileContent::new(), FileContent::new(), FileContent::new(), FileContent::new(), FileContent::new(), FileContent::new()];
     let mut tables: Vec<UndefinedTable> = vec![];
 
     // Parse files
@@ -163,7 +164,7 @@ fn main() {
     let start_of_fixed = FIXED_START; 
     let mut erasable = RAM_START; // Start of RAM
 
-    let mut defined: Vec<DefinedSymbol> = vec![ACC, L, Q, Z, BB, ZERO, PANT, BTNUP, BTNRGT, BTNDWN, BTNLFT, BTN1, BTN2, POTE];
+    let mut defined: Vec<DefinedSymbol> = vec![ACC, L, Q, Z, BB, ZERO, PANT, BTNUP, BTNRGT, BTNDWN, BTNLFT, BTN1, BTN2, POTE, CORTO, MEDIO, LARGO];
     let mut binary: Vec<u16> = vec![];
 
     let mut len_code_total = 0;

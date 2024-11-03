@@ -1,5 +1,5 @@
 .config
-    VEC PROGS 5
+    VEC PROGS 6
 .code
 INICIO:
 # Actualiza la pantalla
@@ -51,13 +51,15 @@ PDIR:
     TCF IF
     TCF PLAYER
     TCF LABERINTO
+    TCF PONG
 
 .data
 MAXPRG: # Almacena el maximo de programas - 1
-    DEC 4
+    DEC 5
 PROGS:  # Diferentes valores de la pantalla segun el programa seleccionado
     DEC 1
     DEC 3
     DEC 7
     DEC 15
     DEC 31
+    DEC 63

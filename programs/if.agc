@@ -16,14 +16,14 @@ IMPRIMIR:
     TS PANT
     
     # Pequeño delay para evitar volver inmediatamente a la pantalla de selección
-    CA CICLOS2
+    CA MEDIO
     TS CICLOS
     TC DELAY
 
     # Chequea si debe salir del programa
     CA BTN1
     EXTEND
-    BZMF IF
+    BZF IF
     TC LIMPPANT
     TCF INICIO
 

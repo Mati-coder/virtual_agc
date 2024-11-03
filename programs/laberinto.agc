@@ -107,7 +107,7 @@ D6:
     # Chequea si debe salir del programa
     CA BTN1
     EXTEND
-    BZMF D1
+    BZF D1
     TC LIMPPANT
     TCF INICIO
 D1:

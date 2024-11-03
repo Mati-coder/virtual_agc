@@ -27,7 +27,7 @@ BUCLEF:
     # Chequea si debe salir del programa
     CA BTN1
     EXTEND
-    BZMF FOR
+    BZF FOR
     TCF INICIO
 
 .data

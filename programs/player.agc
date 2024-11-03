@@ -44,7 +44,7 @@ PLAYERB:
     # Chequea si debe salir del programa
     CA BTN1
     EXTEND
-    BZMF C1
+    BZF C1
     TC LIMPPANT
     TCF INICIO
 C1:
