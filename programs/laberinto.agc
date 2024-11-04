@@ -2,12 +2,11 @@
     VEC MASCNEG 8
 .code
 LABERINTO:
-    # Inicializa X e IMPRP a 1 e Y a 0
+    # Inicializa X a 1 e Y a 0
     CA ZERO
     TS Y
     INCR ACC
     TS X    
-    TS IMPRP
 
 # Imprime todo el mapa
     CA ANCHOPANT
@@ -28,6 +27,7 @@ LABB:
     TS PREVX
     CA Y
     TS PREVY
+
     # Actualiza los valores de X e Y
     TC MOVIMIENTO
 
@@ -47,6 +47,7 @@ IMPR:
     EXTEND 
     BZF D3
 
+    # Imprimir mapa + jugador
     CS NOTIMPR
     INDEX Y
     TS PANT
@@ -65,7 +66,8 @@ D4:
     TS CICLOS
     TC DELAY
 
-    # Restablece las filas donde estuvimos anteriormente, para evitar que el jugador se mantenga impreso luego de moverse. Tiene ademas el efecto de hacer parpadear al jugador
+    # Restablece las filas donde estuvimos anteriormente, para evitar que el jugador se mantenga impreso luego de moverse. 
+    # Tiene ademas el efecto de hacerlo parpadear para que sepamos donde esta
     INDEX PREVY
     CA MAPA
     INDEX PREVY
@@ -102,6 +104,7 @@ D1:
     TCF LABB
 
 .data
+# Posicion de la meta
 FINALX: 
     DEC 6
 FINALY:

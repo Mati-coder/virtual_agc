@@ -77,6 +77,7 @@ macro_rules! register {
         const $name: ErasableAddress = $value;
     };
 }
+register!(ACC, 0);
 register!(PANT, 256);
 register!(BTNUP, 264);
 register!(BTNRGT, 265);
@@ -215,7 +216,7 @@ fn entry() -> ! {
         update_btn!(btn2, BTN2);
         
         macro_rules! print_lcd {
-            ($mode:literal) => {
+            ($mode: literal) => {
                 let Instruction(name, addr) = decode(MEMORY.read(MEMORY.read(Z)));
                 let addr_name = MEMORY.get_address_name(addr.unwrap_or(513));
                 lcd.clear();
@@ -225,6 +226,22 @@ fn entry() -> ! {
                 lcd.write_str(" "); 
                 lcd.write_str(addr_name);
             };
+        }
+        macro_rules! print_val_at {
+            ($addr: expr) => {
+                let mut val = MEMORY.read($addr);
+                if val >> 14 != 0 {
+                    val = !val;
+                    lcd.write_str("-");
+                } else {
+                    lcd.write_str("+");
+                }
+                lcd.write_str(char(val/10000));
+                lcd.write_str(char(val/1000));
+                lcd.write_str(char(val/100));
+                lcd.write_str(char(val/10));
+                lcd.write_str(char(val));
+            }
         }
         for i in 0..8 {   
            sendto_matrix!(16*16*(8-i) + (MEMORY.read(PANT+i) & screen_mask));
@@ -247,6 +264,9 @@ fn entry() -> ! {
                     MEMORY.write(MEDIO, 0);
                     MEMORY.write(LARGO, 3);
                     print_lcd!("M");
+                    lcd.set_cursor(1, 0);
+                    lcd.write_str("ACC: ");
+                    print_val_at!(ACC);
                     imp = false;
                 }
                 if btnclk.is_high().unwrap() && !pulsedclk {
@@ -255,18 +275,8 @@ fn entry() -> ! {
                     btnclk.is_high().unwrap();
                     print_lcd!("M");
                     lcd.set_cursor(1, 0);
-                    lcd.write_str(char(MEMORY.read(0)/10000));
-                    lcd.write_str(char(MEMORY.read(0)/1000));
-                    lcd.write_str(char(MEMORY.read(0)/100));
-                    lcd.write_str(char(MEMORY.read(0)/10));
-                    lcd.write_str(char(MEMORY.read(0)));
-                    lcd.write_str(" ");
-                    lcd.write_str(char(MEMORY.read(283)/10000));
-                    lcd.write_str(char(MEMORY.read(283)/1000));
-                    lcd.write_str(char(MEMORY.read(283)/100));
-                    lcd.write_str(char(MEMORY.read(283)/10));
-                    lcd.write_str(char(MEMORY.read(283)));
-
+                    lcd.write_str("ACC: ");
+                    print_val_at!(ACC);
                     pulsedclk = true;
                     timer.delay_ms(200);
                 }
@@ -280,6 +290,9 @@ fn entry() -> ! {
                     MEMORY.write(MEDIO, 0);
                     MEMORY.write(LARGO, 3);
                     print_lcd!("A");
+                    lcd.set_cursor(1, 0);
+                    lcd.write_str("ACC: ");
+                    print_val_at!(ACC);
                     imp = false;
                 }
                 if btnclk.is_high().unwrap(){
@@ -287,6 +300,9 @@ fn entry() -> ! {
                     lcd.set_cursor(0, 0);
                     btnclk.is_high().unwrap();
                     print_lcd!("A");
+                    lcd.set_cursor(1, 0);
+                    lcd.write_str("ACC: ");
+                    print_val_at!(ACC);
                     timer.delay_ms(500);
                 }
             },
@@ -297,10 +313,20 @@ fn entry() -> ! {
                     MEMORY.write(LARGO, 200);
                     lcd.clear();
                     lcd.write_str("    CONTINUO    ");
+                    lcd.set_cursor(1, 0);
+                    lcd.write_str("    PAUSADO     ");
+                    executing = false;
                     imp = false;
                 }
                 if btnclk.is_high().unwrap() && !pulsedclk{
                     executing = !executing;
+                    lcd.set_cursor(1, 0);
+                    if executing {
+                        lcd.write_str("    EJECUTANDO  ");
+                    } else {
+                        lcd.write_str("    PAUSADO     ");
+                    }
+                    
                     pulsedclk = true;
                 }
                 if btnclk.is_low().unwrap() {
@@ -323,7 +349,6 @@ fn entry() -> ! {
                 if btnclk.is_low().unwrap() {
                     pulsedclk = false;
                 }
-                
             },
         }
     } 

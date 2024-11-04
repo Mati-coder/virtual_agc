@@ -1,5 +1,6 @@
 .code
 PONG:
+    # Inicializa distintas variables
     CA ZERO
     INCR ACC
     TS DIRX
@@ -10,7 +11,10 @@ PONG:
     INCR ACC
     TS YB
     TS XB
+
+# Bucle principal
 PONGB:
+    # Chequa si algun jugador debe moverse
     CA BTN1
     EXTEND
     BZF E1
@@ -29,6 +33,7 @@ E2:
     CCS BTNRGT
     INCR YP2
 
+    # Restablece YP1 e YP2 si se pasaron del maximo
     CS YP1
     AD MAXXYP
     COM
@@ -44,6 +49,8 @@ E3:
     BZMF E11
     CA MAXXYP
     TS YP2
+
+    # Dependiendo de el signo de DIRX y DIRY mueve a la bola
 E11:
     CA DIRX
     EXTEND
@@ -63,12 +70,16 @@ E13:
 E14:
     INCR YB
 E15:
-    CA ZERO
-    TS FILA
+    
     CA ANCHOPANT
 IMPRBP:
     TS I
 
+    # Inicializa el valor a imprimir a 0
+    CA ZERO
+    TS FILA
+
+    # Si YP1 <= I <= YP1 + LENP, entonces imprime al jugador en esa fila
     CS I
     AD YP1
     EXTEND
@@ -83,9 +94,11 @@ E4:
     BZMF E5
     TCF E6
 E5:
+    # Carga el valor de pantalla correspondiente al jugador 1 a la impresion
     CA MASCP1
     TS FILA
 E6:
+    # Si YP2 <= I <= YP2 + LENP, entonces imprime al jugador en esa fila
     CS I
     AD YP2
     EXTEND
@@ -100,21 +113,25 @@ E7:
     BZMF E8
     TCF E9
 E8:
+    # Hace un OR entre FILA y el valor de pantalla correspondiente al jugador 2, para que se puedan imprimir ambos jugadores en la misma fila
     CS FILA
     MASK MASCNP2
     COM
     TS FILA
 E9:
+    # Si I == YB, imprime la pelota
     CS YB
     AD I
     EXTEND
     BZF E10
+    # Hace un OR entre FILA y el valor de pantalla correspondiente a la pelota
     CS FILA
     INDEX XB
     MASK MASCNEG
     COM
     TS FILA
 E10:
+    # Imprime el valor calculado
     CA FILA
     INDEX I
     TS PANT
@@ -122,18 +139,22 @@ E10:
     CCS I
     TCF IMPRBP
 
+    # Si YB es 0 o MAXXY, la pelota rebota, por lo que su direccion de movimiento cambai
     CA YB
     EXTEND
     BZF E16
+
     CS YB
     AD MAXXY
     EXTEND
     BZMF E16
     TCF E17
 E16:
+    # Invierte el signo de DIRY
     CS DIRY
     TS DIRY
 E17:
+    # Si XB es 0, se fija si YP1 <= YB <= YP2 y si es asi rebota. Si no es asi, gana el jugador 2
     CA XB
     EXTEND
     BZF E18
@@ -159,6 +180,7 @@ E21:
     # GANA EL JUGADOR 2
 
 E22:
+    # Si XB es MAXXY, se fija si YP2 <= YB <= YP2 y si es asi rebota. Si no es asi, gana el jugador 1
     CS XB
     AD MAXXY
     EXTEND
@@ -183,10 +205,12 @@ E25:
     TS DIRX
 E26:
     # GANA EL JUGADOR 1
+
 E27:
+    # Chequea si debe salir del programa
     CA BTNDWN
     EXTEND
-    BZF PONGB
+    BZF PONGB 
     TC LIMPPANT
     TCF INICIO
 
