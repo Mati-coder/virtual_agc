@@ -12,6 +12,12 @@ PONG:
     TS YB
     TS XB
 
+# Bucle que evita que el juego inicie hasta que se presione BTNUP
+PAUSA:
+    CCS BTNUP
+    TCF PONGB
+    TCF PAUSA
+
 # Bucle principal
 PONGB:
     # Chequa si algun jugador debe moverse
@@ -35,19 +41,19 @@ E2:
 
     # Restablece YP1 e YP2 si se pasaron del maximo
     CS YP1
-    AD MAXXYP
+    AD MAXYP
     COM
     EXTEND
     BZMF E3
-    CA MAXXYP
+    CA MAXYP
     TS YP1
 E3:
     CS YP2
-    AD MAXXYP
+    AD MAXYP
     COM
     EXTEND
     BZMF E11
-    CA MAXXYP
+    CA MAXYP
     TS YP2
 
     # Dependiendo de el signo de DIRX y DIRY mueve a la bola
@@ -179,6 +185,15 @@ E20:
 E21:
     # GANA EL JUGADOR 2
 
+    CA LARGO
+    TS CICLOS
+    TC DELAY
+
+    CA LARGO
+    TS CICLOS
+    TC DELAY
+
+    TCF BLINK
 E22:
     # Si XB es MAXXY, se fija si YP2 <= YB <= YP2 y si es asi rebota. Si no es asi, gana el jugador 1
     CS XB
@@ -206,6 +221,15 @@ E25:
 E26:
     # GANA EL JUGADOR 1
 
+    CA LARGO
+    TS CICLOS
+    TC DELAY
+
+    CA LARGO
+    TS CICLOS
+    TC DELAY
+
+    TCF BLINK
 E27:
     # Chequea si debe salir del programa
     CA BTNDWN
@@ -215,11 +239,11 @@ E27:
     TCF INICIO
 
 .data
-LENP:
+LENP: # Alto del jugador de pong
     DEC 2
-MAXXYP:
+MAXYP: # Maximo valor Y del jugador
     DEC 5
-MASCP1:
+MASCP1: # Valor del jugador 1 de pong
     DEC 1
-MASCNP2:
+MASCNP2: # Negativo del valor del jugador 2 de pong
     DEC -128

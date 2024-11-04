@@ -31,7 +31,7 @@ BUCLEF:
     TCF INICIO
 
 .data
-MAPA:
+MAPA: # Laberinto
     DEC 253
     DEC 197
     DEC 145

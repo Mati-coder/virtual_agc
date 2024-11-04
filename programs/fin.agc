@@ -1,3 +1,0 @@
-.code
-FIN:
-	TCF FIN

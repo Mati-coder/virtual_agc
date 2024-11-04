@@ -35,14 +35,16 @@ enum Modes {
     AUTO = 1,
     CONTINUO = 2,
     RESET = 3,
+    MEM = 4,
 }
 impl From<u8> for Modes {
     fn from(value: u8) -> Self {
-        match value % 4 {
+        match value % 5 {
             0 => Modes::MANUAL,
             1 => Modes::AUTO,
             2 => Modes::CONTINUO,
             3 => Modes::RESET,
+            4 => Modes::MEM,
             _ => unreachable!()
         }
     }
@@ -130,7 +132,7 @@ fn entry() -> ! {
     button!(btnclk, gpio6);
     
     // LED Matrix control variables and setup
-    const screen_mask: u16 = 0x00FF;
+    const SCREEN_MASK: u16 = 0x00FF;
     let spi_pins = (pins.gpio3.into_function(), pins.gpio2.into_function());
     let mut spi: hal::Spi<_, _, _, 16> = hal::Spi::new(p.SPI0, spi_pins).init(&mut p.RESETS, clocks.peripheral_clock.freq(), 8.MHz(), embedded_hal::spi::MODE_0);
     let mut cs = pins.gpio5.into_push_pull_output();
@@ -176,28 +178,16 @@ fn entry() -> ! {
     // Potentiometer control variables
     let mut adc = hal::Adc::new(p.ADC, &mut p.RESETS);
     let mut potentiometer = hal::adc::AdcPin::new(pins.gpio26).unwrap();
-    
-    // Ejemplo lectura del pote
-    let reading: u16 = adc.read(&mut potentiometer).unwrap();
 
-    // Run a cycle
-    //execute(MEMORY.read(MEMORY.read(Z)));
-    
-    // Get ins and address name
-    //let Instruction(name, addr) = decode(MEMORY.read(Z));
-    //let addr_name = MEMORY.get_address_name(addr);
 
-    // Read or Write
-    //MEMORY.read(k);
-    //MEMORY.write(k, val);
-    
-    // Reset
-    // hal::reset();
     let mut mode: Modes = Modes::MANUAL;
     let mut pulsedclk: bool = false;
     let mut pulsedcfg: bool = false;
     let mut imp: bool = true;
     let mut executing: bool = false;
+    let mut address = 256;
+    let mut pulsedup: bool = false;
+    let mut pulsedown: bool = false;
     loop {
         macro_rules! update_btn {
             ($name:ident, $addr:expr) => {
@@ -214,6 +204,9 @@ fn entry() -> ! {
         update_btn!(btnrgt, BTNRGT);
         update_btn!(btn1, BTN1);
         update_btn!(btn2, BTN2);
+        let reading: u16 = adc.read(&mut potentiometer).unwrap();
+        let reading = reading & 4095;
+        MEMORY.write(POTE, reading);
         
         macro_rules! print_lcd {
             ($mode: literal) => {
@@ -244,7 +237,7 @@ fn entry() -> ! {
             }
         }
         for i in 0..8 {   
-           sendto_matrix!(16*16*(8-i) + (MEMORY.read(PANT+i) & screen_mask));
+           sendto_matrix!(16*16*(8-i) + (MEMORY.read(PANT+i) & SCREEN_MASK));
         }
         
         if btncfg.is_high().unwrap() && !pulsedcfg {
@@ -350,9 +343,35 @@ fn entry() -> ! {
                     pulsedclk = false;
                 }
             },
+            Modes::MEM => {
+                if btndwn.is_high().unwrap() && !pulsedown {
+                    if  address < 287{
+                        address = address + 1;
+                    }
+                    pulsedown = true;
+                }
+                if btnup.is_high().unwrap() && !pulsedup{
+                    if address > 256{
+                       address = address - 1;
+                    }
+                    pulsedup = true;
+                }
+                if btndwn.is_low().unwrap() {
+                    pulsedown = false;
+                }
+                if btnup.is_low().unwrap() {
+                    pulsedup = false;
+                }
+                lcd.clear();
+                lcd.write_str(MEMORY.get_address_name(address));
+                lcd.write_str(": ");
+                print_val_at!(address);
+                lcd.set_cursor(1, 0);
+                lcd.write_str(MEMORY.get_address_name(address + 1));
+                lcd.write_str(": ");
+                print_val_at!(address + 1);
+            }
         }
-    } 
+    }
 }
-
-
 
