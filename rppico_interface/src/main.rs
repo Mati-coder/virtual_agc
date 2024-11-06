@@ -122,14 +122,14 @@ fn entry() -> ! {
             let mut $name = pins.$pin.into_pull_down_input();
         };
     }
-    button!(btnup, gpio13);
-    button!(btnrgt, gpio12);
-    button!(btndwn, gpio11);
+    button!(btnup, gpio9); 
+    button!(btnrgt, gpio8); 
+    button!(btndwn, gpio12);
     button!(btnlft, gpio10);
-    button!(btn1, gpio9);
-    button!(btn2, gpio8);
-    button!(btncfg, gpio7);
-    button!(btnclk, gpio6);
+    button!(btn1, gpio14); 
+    button!(btn2, gpio6);
+    button!(btncfg, gpio13);
+    button!(btnclk, gpio7);
     
     // LED Matrix control variables and setup
     const SCREEN_MASK: u16 = 0x00FF;
@@ -143,7 +143,7 @@ fn entry() -> ! {
             spi.write(&[$data]);
             timer.delay_ns(5);
             cs.set_low();
-            timer.delay_ns(10);
+            timer.delay_ns(10); 
         };
     }
     sendto_matrix!(SHUTDOWN + 1); // ON
