@@ -271,7 +271,7 @@ fn entry() -> ! {
                     lcd.write_str("ACC: ");
                     print_val_at!(ACC);
                     pulsedclk = true;
-                    timer.delay_ms(200);
+                    timer.delay_ms(100);
                 }
                 if btnclk.is_low().unwrap() {
                     pulsedclk = false;
@@ -296,7 +296,7 @@ fn entry() -> ! {
                     lcd.set_cursor(1, 0);
                     lcd.write_str("ACC: ");
                     print_val_at!(ACC);
-                    timer.delay_ms(500);
+                    timer.delay_ms(300);
                 }
             },
             Modes::CONTINUO => {
